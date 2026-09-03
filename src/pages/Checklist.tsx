@@ -50,7 +50,8 @@ export default function Checklist() {
     if (!id) return;
     markCanceled(id);
     navigate(`/subscriptions/${id}`, {
-      state: { subscriptionId: id } as RouteState['/subscriptions/:id'],
+      replace: true,
+      state: { subscriptionId: id, toast: '해지 완료로 표시했어요' } as RouteState['/subscriptions/:id'],
     });
   }
 
