@@ -221,7 +221,10 @@ export interface RouteState {
   pages/
     CancelChecklist.tsx
     Checklist.tsx
+    Compare.tsx
     Home.tsx
+    More.tsx
+    Premium.tsx
     SubscriptionDetail.tsx
     SubscriptionEdit.tsx
     SubscriptionNew.tsx
@@ -276,11 +279,12 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0012: 구독 상세 화면 /subscriptions/:id (files: src/pages/SubscriptionDetail.tsx)
 - 0013: 구독 수정 화면 /subscriptions/:id/edit (files: src/pages/SubscriptionEdit.tsx)
 - 0016: 더보기 화면 /more (files: src/pages/More.tsx)
+- 0017: 프리미엄 화면 /premium (IAP) (files: src/pages/Premium.tsx)
+
+## TDD 상태
+⚠️ TDD 테스트 파일 자동 작성에 실패했습니다. 소스 코드를 작성하기 전에 `src/__tests__/packet-XXXX.test.ts` 파일에 AC 기반 테스트를 먼저 작성하세요 (TDD red phase). 테스트 작성 후 구현하세요.
 
 ## Available exports from existing files
-// src/App.tsx
-export default function App() {
-
 // src/components/AdSlot.tsx
 export function AdSlot({ adGroupId, className, variant, theme }: AdSlotProps) {
 
@@ -346,7 +350,9 @@ export function formatKRW(amount: number): string {
 export function ddayLabel(days: number): string {
 export function formatCurrencyKrw(amount: number): string {
 export function formatDate(date: string, format: 'short' | 'long' = 'short'): string {
-export function getDaysUntilBilling(nextB
+export function getDaysUntilBilling(nextBillingDate: string): number {
+
+// src/domain/che
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 
