@@ -1,68 +1,74 @@
-import type { ServiceTemplate, ChecklistItem, BenchmarkTable } from "@/lib/types";
+// 정적 상수 · 스토리지 키 정의. 도메인 타입은 types.ts에서 import한다.
 
-// ========== Storage Keys ==========
+import type { ServiceTemplate, ChecklistItem, BenchmarkTable } from '@/lib/types';
+
 export const STORAGE_KEYS = {
-  subscriptions: "subtrack.subscriptions.v1",
-  checklists: "subtrack.checklists.v1",
-  settings: "subtrack.settings.v1",
-  meta: "subtrack.meta.v1",
+  subscriptions: 'subtrack.subscriptions.v1',
+  checklists: 'subtrack.checklists.v1',
+  settings: 'subtrack.settings.v1',
+  meta: 'subtrack.meta.v1',
 } as const;
 
-// ========== Service Templates (12종) ==========
 export const SERVICE_TEMPLATES: ServiceTemplate[] = [
-  { key: "netflix", name: "넷플릭스", category: "OTT", iconKey: "netflix" },
-  { key: "tving", name: "TVING", category: "OTT", iconKey: "tving" },
-  { key: "wavve", name: "Wavve", category: "OTT", iconKey: "wavve" },
-  { key: "spotify", name: "Spotify", category: "MUSIC", iconKey: "spotify" },
-  { key: "melon", name: "멜론", category: "MUSIC", iconKey: "melon" },
-  { key: "genie", name: "지니", category: "MUSIC", iconKey: "genie" },
-  { key: "ncloud", name: "네이버 클라우드", category: "CLOUD", iconKey: "ncloud" },
-  { key: "gdrive", name: "Google Drive", category: "CLOUD", iconKey: "gdrive" },
-  { key: "playstation", name: "PlayStation Plus", category: "GAME", iconKey: "playstation" },
-  { key: "xbox", name: "Xbox Game Pass", category: "GAME", iconKey: "xbox" },
-  { key: "notion", name: "Notion", category: "PRODUCTIVITY", iconKey: "notion" },
-  { key: "slack", name: "Slack", category: "PRODUCTIVITY", iconKey: "slack" },
+  { key: 'netflix', name: '넷플릭스', category: 'OTT', iconKey: 'netflix' },
+  { key: 'youtube-premium', name: '유튜브 프리미엄', category: 'OTT', iconKey: 'youtube' },
+  { key: 'disney-plus', name: '디즈니플러스', category: 'OTT', iconKey: 'disney' },
+  { key: 'watcha', name: '왓챠', category: 'OTT', iconKey: 'watcha' },
+  { key: 'melon', name: '멜론', category: 'MUSIC', iconKey: 'melon' },
+  { key: 'spotify', name: '스포티파이', category: 'MUSIC', iconKey: 'spotify' },
+  { key: 'genie', name: '지니뮤직', category: 'MUSIC', iconKey: 'genie' },
+  { key: 'icloud', name: '아이클라우드', category: 'CLOUD', iconKey: 'icloud' },
+  { key: 'google-one', name: '구글 원', category: 'CLOUD', iconKey: 'google-one' },
+  { key: 'notion', name: '노션', category: 'PRODUCTIVITY', iconKey: 'notion' },
+  { key: 'chatgpt-plus', name: '챗지피티 플러스', category: 'PRODUCTIVITY', iconKey: 'chatgpt' },
+  { key: 'coupang-play', name: '쿠팡플레이', category: 'OTT', iconKey: 'coupang-play' },
 ];
 
-// ========== Default Checklist (5개) ==========
 export const DEFAULT_CHECKLIST: ChecklistItem[] = [
-  { id: "remaining", label: "미납금 확인", done: false, doneAt: null },
-  { id: "autopay", label: "자동결제 해제", done: false, doneAt: null },
-  { id: "backup", label: "데이터 백업", done: false, doneAt: null },
-  { id: "notify", label: "알림 구독 해제", done: false, doneAt: null },
-  { id: "capture", label: "로그인 정보 저장", done: false, doneAt: null },
+  { id: 'remaining', label: '남은 이용 기간을 확인했어요', done: false, doneAt: null },
+  { id: 'autopay', label: '자동결제 해지를 신청했어요', done: false, doneAt: null },
+  { id: 'backup', label: '데이터를 백업해 뒀어요', done: false, doneAt: null },
+  { id: 'notify', label: '같이 쓰는 사람에게 알렸어요', done: false, doneAt: null },
+  { id: 'capture', label: '해지 화면을 캡처해 뒀어요', done: false, doneAt: null },
 ];
 
-// ========== Benchmark (연령별 평균) ==========
 export const DEFAULT_BENCHMARK: BenchmarkTable = {
-  "20-24": 45000,
-  "25-29": 58000,
-  "30-34": 72000,
-  "35-39": 85000,
+  '20-24': 18000,
+  '25-29': 24000,
+  '30-34': 29000,
+  '35-39': 33000,
 };
 
-export function getBenchmark(jsonString?: string): BenchmarkTable {
-  const json = jsonString ?? (import.meta.env.VITE_BENCHMARK_JSON as string | undefined);
-
-  if (!json) {
-    return DEFAULT_BENCHMARK;
-  }
-
-  try {
-    return JSON.parse(json);
-  } catch (e) {
-    console.warn("Failed to parse VITE_BENCHMARK_JSON benchmark data, using defaults");
-    return DEFAULT_BENCHMARK;
-  }
-}
-
-// ========== Benchmark Disclaimer ==========
 export const BENCHMARK_DISCLAIMER =
-  "이 조사는 SubTrack 사용자 데이터를 기반으로 하며, 실제 시장 평균과 다를 수 있습니다.";
+  '같은 연령대 평균은 참고용 추정치예요. 실제 이용 데이터와 다를 수 있어요.';
 
-// ========== Numeric Constants ==========
 export const MAX_SUBSCRIPTIONS = 100;
 export const FREE_SUBSCRIPTION_LIMIT = 3;
 export const MAX_PRICE_HISTORY = 20;
 export const COMPARE_UNLOCK_HOURS = 24;
-export const MAX_STORAGE_CHARS = 1048576; // 1MB
+export const MAX_STORAGE_CHARS = 1048576;
+
+function isValidBenchmarkTable(value: unknown): value is BenchmarkTable {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (['20-24', '25-29', '30-34', '35-39'] as const).every(
+    (band) => typeof record[band] === 'number',
+  );
+}
+
+export function getBenchmark(
+  raw: string = (import.meta.env.VITE_BENCHMARK_JSON as string | undefined) ?? '',
+): BenchmarkTable {
+  if (!raw) return DEFAULT_BENCHMARK;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!isValidBenchmarkTable(parsed)) {
+      console.warn('getBenchmark: invalid benchmark json shape, falling back to default');
+      return DEFAULT_BENCHMARK;
+    }
+    return parsed;
+  } catch {
+    console.warn('getBenchmark: failed to parse benchmark json, falling back to default');
+    return DEFAULT_BENCHMARK;
+  }
+}
