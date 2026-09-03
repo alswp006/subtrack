@@ -1,0 +1,728 @@
+[
+  {
+    "id": "0001",
+    "title": "도메인 타입 + RouteState 정의",
+    "epic": "Epic 1: 타입/상수",
+    "task": {
+      "description": "src/lib/types.ts에 SubTrack 도메인 타입 전부와 라우트 state 계약을 순수 타입으로 정의한다. BillingCycle, SubscriptionStatus, CategoryKey, AgeBand, PriceChange, Subscription, ChecklistItem, CancelChecklist, AppSettings, StorageMeta, ServiceTemplate, BenchmarkTable, StorageError, Result<T>, LoadState<T>, RouteState(8개 라우트, 각 값에 | null 명시)를 포함한다. import 문과 런타임 코드는 0줄이다.",
+      "acceptance_criteria": [
+        "npx tsc --noEmit 통과하고 파일 내 import 문 0건, 실행 가능한 표현식 0건이다",
+        "Subscription이 SPEC 정의 15개 필드와 1:1 일치하고 옵셔널 필드가 없으며 priceHistory: PriceChange[] 이다",
+        "RouteState가 '/', '/subscriptions/new', '/subscriptions/:id', '/subscriptions/:id/edit', '/subscriptions/:id/checklist', '/compare', '/more', '/premium' 8개 키를 모두 갖고 각 값 타입에 | null 이 붙어 있다",
+        "ServiceTemplate 필드는 key/name/category/iconKey 4개뿐이며 금액 관련 필드가 없다"
+      ]
+    },
+    "covers": [
+      "F1-AC3",
+      "F1-AC7",
+      "F5-AC4",
+      "F7-AC2",
+      "F8-AC7"
+    ],
+    "files": [
+      "src/lib/types.ts"
+    ],
+    "definition_of_done": [
+      "tsc --noEmit 0 error",
+      "RouteState 8키 존재",
+      "금액 필드 없는 ServiceTemplate"
+    ],
+    "depends_on": [],
+    "db_schema": "interface Subscription { id: string; name: string; category: CategoryKey; iconKey: string; amount: number; cycle: BillingCycle; firstBillingDate: string; nextBillingDate: string; memo: string; status: SubscriptionStatus; priceHistory: PriceChange[]; createdAt: string; updatedAt: string } → localStorage key: 'subtrack.subscriptions.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0002",
+    "title": "정적 상수 · 스토리지 키 정의",
+    "epic": "Epic 1: 타입/상수",
+    "task": {
+      "description": "src/lib/constants.ts에 STORAGE_KEYS 4개, SERVICE_TEMPLATES 12종(이름·카테고리·iconKey만, 금액 없음), DEFAULT_CHECKLIST 5개(remaining/autopay/backup/notify/capture), DEFAULT_BENCHMARK + getBenchmark(), MAX_SUBSCRIPTIONS=100, FREE_SUBSCRIPTION_LIMIT=3, MAX_PRICE_HISTORY=20, COMPARE_UNLOCK_HOURS=24, MAX_STORAGE_CHARS=1048576, BENCHMARK_DISCLAIMER을 정의한다. 타입은 types.ts에서 import한다.",
+      "acceptance_criteria": [
+        "SERVICE_TEMPLATES.length === 12 이고 key 중복 0건, name '넷플릭스' 항목의 category === 'OTT' 이다",
+        "DEFAULT_CHECKLIST.length === 5 이고 id 집합이 remaining/autopay/backup/notify/capture 와 정확히 일치하며 라벨에 '설치'/'다운로드'/'바로가기' 문자열이 없다",
+        "VITE_BENCHMARK_JSON이 '{{broken' 인 상태에서 getBenchmark() 호출 시 예외 없이 DEFAULT_BENCHMARK를 반환하고 console.warn만 1회 호출한다(console.error 0회)",
+        "파일 내 HEX 색상 리터럴 0건이다"
+      ]
+    },
+    "covers": [
+      "F2-AC1",
+      "F6-AC3",
+      "F7-AC4"
+    ],
+    "files": [
+      "src/lib/constants.ts"
+    ],
+    "definition_of_done": [
+      "tsc --noEmit 통과",
+      "템플릿 12종/체크리스트 5종 검증",
+      "getBenchmark 파싱 실패 fallback 동작"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "STORAGE_KEYS = { subscriptions:'subtrack.subscriptions.v1', checklists:'subtrack.checklists.v1', settings:'subtrack.settings.v1', meta:'subtrack.meta.v1' }",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0003",
+    "title": "날짜 · 금액 계산 순수 함수",
+    "epic": "Epic 2: 데이터 레이어",
+    "task": {
+      "description": "src/domain/calc.ts에 부수효과 없는 계산 함수를 구현하고 calc.test.ts로 검증한다. getToday(KST 기준 YYYY-MM-DD 단일 출처), isValidDateString, monthlyAmount(YEARLY면 Math.round(amount/12)), computeNextBillingDate(문자열 산술로 월말 보정, Date 롤오버 금지), daysUntil, formatKRW, ddayLabel(0이면 '오늘 결제')을 제공한다.",
+      "acceptance_criteria": [
+        "monthlyAmount({amount:29000,cycle:'YEARLY'}) === 2417 이고 monthlyAmount({amount:13500,cycle:'MONTHLY'}) === 13500 이다",
+        "computeNextBillingDate('2026-01-31','MONTHLY','2026-04-01') === '2026-04-30' 이고 today='2026-04-30'이면 '2026-04-30' 이다",
+        "computeNextBillingDate('2026-08-10','MONTHLY','2026-09-04') === '2026-09-10' 이고 daysUntil('2026-09-06','2026-09-04') === 2 이다",
+        "잘못된 날짜 입력 시 예외를 던지지 않고 computeNextBillingDate는 '', daysUntil은 NaN을 반환하며 console.error 호출 0건이다",
+        "Array.prototype.at/findLast/structuredClone/정규식 lookbehind 사용 0건이다"
+      ]
+    },
+    "covers": [
+      "F1-AC1",
+      "F1-AC2",
+      "F4-AC2"
+    ],
+    "files": [
+      "src/domain/calc.ts",
+      "src/domain/calc.test.ts"
+    ],
+    "definition_of_done": [
+      "테스트 전부 통과",
+      "tsc --noEmit 통과",
+      "ES2019 호환 문법만 사용"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0004",
+    "title": "스토리지 프리미티브 (안전 읽기/쓰기)",
+    "epic": "Epic 2: 데이터 레이어",
+    "task": {
+      "description": "src/domain/storage.ts에 localStorage 저수준 래퍼만 구현하고 테스트한다. readJson<T>(파싱 실패 시 원본을 `${key}.corrupt`로 이동 후 fallback 반환, console.warn 1회), writeJson(길이 초과·QuotaExceededError 시 기존값 유지하고 STORAGE_FULL 반환), ensureMeta, clearAll(SubTrack 키 4개만 삭제), newId(crypto.randomUUID 없으면 fallback). 엔티티 로직은 넣지 않는다.",
+      "acceptance_criteria": [
+        "localStorage['subtrack.subscriptions.v1']='{{broken' 상태에서 readJson(key,[])가 []를 반환하고 '...v1.corrupt' 키에 원본이 보존되며 console.warn 1회/console.error 0회다",
+        "setItem이 QuotaExceededError를 throw하도록 모킹하면 writeJson이 {ok:false,error:'STORAGE_FULL'}을 반환하고 기존 저장값이 변하지 않는다",
+        "clearAll() 후 localStorage['unrelated.key']는 그대로 남아 있다",
+        "newId()를 100회 호출했을 때 중복 0건이다"
+      ]
+    },
+    "covers": [
+      "F1-AC4",
+      "F1-AC5"
+    ],
+    "files": [
+      "src/domain/storage.ts",
+      "src/domain/storage.test.ts"
+    ],
+    "definition_of_done": [
+      "테스트 통과",
+      "try/catch로 모든 localStorage 접근 보호",
+      "console.error 0건"
+    ],
+    "depends_on": [
+      "0002"
+    ],
+    "db_schema": "StorageMeta { schemaVersion: 1; migratedAt: string } → localStorage key: 'subtrack.meta.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0005",
+    "title": "구독 리포지토리 (CRUD · 검증 · 가격 이력)",
+    "epic": "Epic 2: 데이터 레이어",
+    "task": {
+      "description": "src/domain/subscriptions.ts에 구독 접근 전용 모듈을 구현한다. listSubscriptions, validateSubscriptionInput(name trim 1~20자, amount 정수 1~10,000,000, firstBillingDate 유효, memo 100자 이하 위반 필드명 배열 반환), saveSubscription(신규 필드 채움+nextBillingDate 계산, 100건 이상이면 MAX_ITEMS), updateSubscription(금액 변동 시에만 priceHistory push, 20건 초과 시 shift, delta 반환), deleteSubscription.",
+      "acceptance_criteria": [
+        "name이 공백만인 입력에 validateSubscriptionInput이 ['name']을 포함해 반환하고 saveSubscription은 {ok:false,error:'VALIDATION',fields}를 반환한다",
+        "저장된 구독이 100건일 때 신규 saveSubscription 호출이 {ok:false,error:'MAX_ITEMS'}를 반환하고 저장 건수는 100 그대로다",
+        "updateSubscription으로 금액을 13500→17000으로 바꾸면 priceHistory가 1건 늘고 delta === 3500 이며, 같은 금액으로 다시 저장하면 이력이 추가되지 않고 delta === 0 이다",
+        "priceHistory가 20건인 상태에서 추가 변경 시 길이는 20이고 가장 오래된 항목이 제거된다"
+      ]
+    },
+    "covers": [
+      "F1-AC6",
+      "F5-AC1",
+      "F5-AC2",
+      "F2-AC4"
+    ],
+    "files": [
+      "src/domain/subscriptions.ts",
+      "src/domain/subscriptions.test.ts"
+    ],
+    "definition_of_done": [
+      "테스트 통과",
+      "화면 코드가 localStorage에 직접 접근하지 않아도 되는 API 완비",
+      "Result<T> 반환 일관성"
+    ],
+    "depends_on": [
+      "0004"
+    ],
+    "db_schema": "Subscription[] → localStorage key: 'subtrack.subscriptions.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0006",
+    "title": "설정 · 체크리스트 리포지토리",
+    "epic": "Epic 2: 데이터 레이어",
+    "task": {
+      "description": "src/domain/settings.ts에 getSettings(없으면 기본값 ageBand:'UNSET', isPremium:false 반환)/saveSettings(patch 병합)/isCompareUnlocked(compareUnlockedAt이 24시간 이내면 true)/unlockCompare()를 구현하고, src/domain/checklists.ts에 getChecklist(id)(없으면 DEFAULT_CHECKLIST 복사본 생성)/toggleChecklistItem(itemId)(done 토글 + doneAt 갱신)/getChecklistProgress를 구현한다.",
+      "acceptance_criteria": [
+        "localStorage가 비어 있을 때 getSettings()가 예외 없이 {ageBand:'UNSET', isPremium:false, premiumGrantedAt:null, compareUnlockedAt:null, onboardedAt:null}을 반환한다",
+        "compareUnlockedAt이 23시간 전이면 isCompareUnlocked()===true, 25시간 전이면 false를 반환한다",
+        "최초 getChecklist('x')가 items 5개(모두 done:false)를 반환하고, toggleChecklistItem 후 재조회 시 해당 item.done===true, doneAt이 ISO 문자열이다",
+        "getChecklistProgress가 5개 중 2개 완료 시 {done:2,total:5}를 반환한다"
+      ]
+    },
+    "covers": [
+      "F6-AC2",
+      "F7-AC1",
+      "F7-AC3",
+      "F8-AC5"
+    ],
+    "files": [
+      "src/domain/settings.ts",
+      "src/domain/checklists.ts",
+      "src/domain/settings.test.ts"
+    ],
+    "definition_of_done": [
+      "테스트 통과",
+      "기본값 반환 시 쓰기 부작용 없음",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0004"
+    ],
+    "db_schema": "AppSettings → 'subtrack.settings.v1' / CancelChecklist[] → 'subtrack.checklists.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0007",
+    "title": "상태 훅 useSubscriptions / useSettings",
+    "epic": "Epic 2: 데이터 레이어",
+    "task": {
+      "description": "src/hooks/useSubscriptions.ts와 src/hooks/useSettings.ts를 만든다. 첫 렌더는 반드시 status:'loading'을 반환하고 effect 이후 'ready'로 전환해 빈 상태 깜빡임을 막는다. useSubscriptions는 items, totalMonthly, activeCount, canceledCount, upcoming(임박순 정렬), reload, remove를 제공하고 useSettings는 settings, isPremium, update를 제공한다.",
+      "acceptance_criteria": [
+        "첫 렌더 시 status === 'loading' 이고 effect 실행 후 'ready'로 바뀐다(초기 렌더에서 empty 판정이 나오지 않는다)",
+        "totalMonthly는 status==='ACTIVE' 항목만 monthlyAmount 합산이며 CANCELED 항목은 제외된다",
+        "upcoming은 nextBillingDate 오름차순으로 정렬되고 날짜가 ''인 손상 항목은 배열 끝에 배치된다",
+        "remove(id) 호출 후 items에서 해당 항목이 사라지고 페이지 새로고침 후에도 삭제 상태가 유지된다"
+      ]
+    },
+    "covers": [
+      "F3-AC1",
+      "F3-AC5",
+      "F4-AC7"
+    ],
+    "files": [
+      "src/hooks/useSubscriptions.ts",
+      "src/hooks/useSettings.ts"
+    ],
+    "definition_of_done": [
+      "loading→ready 전환 검증",
+      "리포지토리 모듈만 사용(직접 localStorage 접근 0건)",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0005",
+      "0006"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0008",
+    "title": "시각화 · 스켈레톤 공용 컴포넌트",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/components/Sparkline.tsx(최근 6개월 추이 SVG 라인), src/components/MiniBar.tsx(카테고리 비중 상위 5개 가로 막대), src/components/ListSkeleton.tsx(회색 블록 스켈레톤)를 구현한다. 색상은 var(--tds-color-*)만 사용하고 데이터 0건이면 null 대신 안내 텍스트를 렌더한다.",
+      "acceptance_criteria": [
+        "Sparkline에 points 6개를 주면 SVG polyline이 렌더되고 points가 빈 배열이면 '데이터가 아직 없어요' 텍스트가 렌더된다",
+        "MiniBar는 items 상위 5개만 렌더하고 각 막대 옆에 카테고리명과 비율(%)이 표시된다",
+        "세 컴포넌트 소스에 HEX 색상 리터럴 0건이며 모든 색상이 var(--tds-color-*)에서 온다",
+        "ListSkeleton은 count prop 개수만큼 고정 높이 블록을 렌더한다"
+      ]
+    },
+    "covers": [
+      "F3-AC3",
+      "F3-AC4"
+    ],
+    "files": [
+      "src/components/Sparkline.tsx",
+      "src/components/MiniBar.tsx",
+      "src/components/ListSkeleton.tsx"
+    ],
+    "definition_of_done": [
+      "HEX 0건",
+      "width 고정 없이 100% 반응형",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "TDS Paragraph.Text, Spacing 사용. Sparkline: viewBox 기반 SVG, width 100%, height 64, stroke var(--tds-color-blue500). MiniBar: flex 가로 막대(높이 8, borderRadius 4, backgroundColor var(--tds-color-grey100), fill var(--tds-color-blue400)) + 라벨/퍼센트. ListSkeleton: 높이 64 회색 블록(var(--tds-color-grey50)) count개, gap 8. 고정 px width 금지."
+  },
+  {
+    "id": "0009",
+    "title": "대시보드 — 요약 히어로 · 차트 · 빈/로딩 상태",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/Home.tsx를 만들고 상단 요약 영역까지 구현한다. useSubscriptions로 loading/empty/ready를 분기하고, SummaryHero(이번 달 구독비), 최근 6개월 Sparkline, 카테고리 MiniBar, 하단 SubmitFooter '구독 추가' 버튼, FloatingTabBar를 배치한다. 목록/D-day 카드는 다음 패킷에서 붙인다.",
+      "acceptance_criteria": [
+        "status==='loading'이면 hero-skeleton과 스켈레톤 ListRow 3개만 보이고 '아직 등록한 구독이 없어요' 문구는 렌더되지 않는다",
+        "구독 0건이면 data-testid='empty-state' EmptyState(Asset.ContentIcon + '아직 등록한 구독이 없어요' + 설명)가 보이고 SummaryHero/Sparkline/MiniBar는 렌더되지 않으며 하단 버튼 라벨이 '첫 구독 등록하기'다",
+        "구독 1건 이상이면 summary-hero에 활성 구독 월 환산 합계가 toLocaleString('ko-KR')+'원' 형식으로 표시되고 caption에 '활성 N개 · 해지함 M개'가 나온다",
+        "'구독 추가' 버튼 탭 시 generateHapticFeedback({type:'success'}) 호출 후 /subscriptions/new 로 이동한다",
+        "루트가 ScreenScaffold이고 data-testid='screen-home'이며 모든 탭 가능 요소 높이가 44px 이상이다"
+      ]
+    },
+    "covers": [
+      "F3-AC1",
+      "F3-AC2",
+      "F3-AC5"
+    ],
+    "files": [
+      "src/pages/Home.tsx"
+    ],
+    "definition_of_done": [
+      "로딩/빈/정상 3상태 확인",
+      "HEX 0건",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007",
+      "0008"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "Blueprint(screen-home 상단부): <ScreenScaffold data-testid=\"screen-home\"><Top title={<Top.TitleParagraph>구독 관리</Top.TitleParagraph>} /><SummaryHero data-testid=\"summary-hero\" label=\"이번 달 구독비\" value={<Amount value={totalMonthly} unit=\"원\" typography=\"t1\" />} caption={`활성 ${activeCount}개 · 해지함 ${canceledCount}개`} /><Spacing size={24} /><Paragraph.Text typography=\"t4\">최근 6개월 추이</Paragraph.Text><Spacing size={12} /><Sparkline data-testid=\"trend-sparkline\" points={last6Months} /><Spacing size={24} /><Paragraph.Text typography=\"t4\">카테고리 비중</Paragraph.Text><Spacing size={12} /><MiniBar data-testid=\"category-minibar\" items={top5Categories} /><SubmitFooter><Button variant=\"fill\" size=\"large\" display=\"block\" onClick={onAdd}>구독 추가</Button></SubmitFooter><FloatingTabBar /></ScreenScaffold>. States — Loading: data-testid=\"hero-skeleton\" 회색 블록 + 스켈레톤 ListRow 3개, 빈/D-day 문구 표시 금지. Empty: EmptyState(data-testid=\"empty-state\", Asset.ContentIcon + '아직 등록한 구독이 없어요' + '첫 구독을 등록하고 월 지출을 확인해보세요'), 히어로/차트 미렌더, 하단 버튼 '첫 구독 등록하기', EmptyState 내부 중복 버튼 금지. 여백은 Spacing만, HEX 금지."
+  },
+  {
+    "id": "0010",
+    "title": "대시보드 — D-day 카드 + 구독 목록",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/components/DdayCard.tsx와 src/components/SubscriptionList.tsx를 만들어 Home에서 조립한다. D-3 이내 임박 항목 카드('넷플릭스 D-2 · 13,500원 결제 예정' + '해지 준비' 버튼), 결제 임박순 ListRow 목록(right에 D-day Chip, 인상 항목은 '인상' Chip 병기), 진입 시 location.state.toast 표시를 처리한다.",
+      "acceptance_criteria": [
+        "dday <= 3 인 구독이 있으면 data-testid='dday-card'가 렌더되고 없으면 대신 data-testid='dday-next'에 '다음 결제는 D-N {이름}' 문구가 렌더된다",
+        "'해지 준비' 탭 시 haptic tickWeak 후 /subscriptions/:id/checklist 로 state {subscriptionId, from:'dday'}와 함께 이동한다",
+        "목록 ListRow 탭 시 /subscriptions/:id 로 이동하고, priceHistory가 1건 이상인 항목의 right에 data-testid='price-up-badge' Chip이 함께 보인다",
+        "location.state.toast가 있으면 Toast가 2초 노출된 뒤 state가 초기화되어 새로고침 시 재노출되지 않는다",
+        "항목이 50건을 넘으면 초기 DOM의 ListRow 개수가 20 이하다"
+      ]
+    },
+    "covers": [
+      "F4-AC1",
+      "F4-AC3",
+      "F5-AC3",
+      "F3-AC6"
+    ],
+    "files": [
+      "src/components/DdayCard.tsx",
+      "src/components/SubscriptionList.tsx",
+      "src/pages/Home.tsx"
+    ],
+    "definition_of_done": [
+      "임박/비임박 분기 확인",
+      "state.toast 1회 노출",
+      "50건 초과 윈도잉"
+    ],
+    "depends_on": [
+      "0009"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "Blueprint(screen-home 하단부): <div data-testid=\"dday-card\" style={{display:'flex',flexDirection:'column',gap:8,padding:16,borderRadius:16,backgroundColor:'var(--tds-color-grey50)'}}><Paragraph.Text typography=\"st11\">넷플릭스 D-2 · 13,500원 결제 예정</Paragraph.Text><Button variant=\"weak\" size=\"medium\" display=\"block\">해지 준비</Button></div>; 임박 없음 → <Paragraph.Text data-testid=\"dday-next\" typography=\"st12\" color=\"secondary\">다음 결제는 D-12 스포티파이</Paragraph.Text>. 목록: <Paragraph.Text typography=\"t4\">결제 임박순</Paragraph.Text><Spacing size={12} /><div data-testid=\"subscription-list\"><ListRow onClick={()=>navigate(`/subscriptions/${sub.id}`)} contents={<ListRow.Texts type=\"2RowTypeA\" top=\"넷플릭스\" bottom=\"매월 13,500원\" />} right={<Chip label=\"D-1\" variant=\"filled\" />} /></div>. Error 상태: 목록 상단 인라인 Paragraph.Text typography=\"st12\" color=\"secondary\" '일부 항목을 불러오지 못했어요', 손상 행은 D-day 자리에 '날짜 확인 필요', 총액 제외. haptic tickWeak on ListRow tap."
+  },
+  {
+    "id": "0011",
+    "title": "구독 등록 화면 /subscriptions/new",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/SubscriptionNew.tsx를 만든다. 서비스 템플릿 Chip 12종 + '직접 입력', 이름/금액/첫 결제일/메모 TextField, 결제 주기 Tab(매월/매년), 하단 SubmitFooter 저장 버튼을 배치한다. 저장은 saveSubscription을 호출하고 검증 실패 필드에 TextField hasError를 표시한다.",
+      "acceptance_criteria": [
+        "템플릿 Chip을 선택하면 이름 필드가 해당 템플릿 name으로 자동 채워지고 '직접 입력' 선택 시 이름 필드가 비워지며 편집 가능해진다",
+        "이름이 빈 값이거나 금액이 0 이하면 저장 버튼 탭 시 해당 TextField에 hasError와 안내 문구가 표시되고 화면 이동이 일어나지 않는다",
+        "유효 입력으로 저장하면 haptic success 후 '/'로 state {toast:'구독을 등록했어요'}와 함께 이동하고 대시보드 목록에 항목이 나타난다",
+        "동일 name+amount+cycle 조합이 이미 있으면 AlertDialog(왼쪽 버튼 라벨 '닫기')가 뜨고 확인해야 저장된다",
+        "루트가 ScreenScaffold data-testid='screen-new'이고 화면 내 HEX 리터럴 0건이다"
+      ]
+    },
+    "covers": [
+      "F2-AC1",
+      "F2-AC2",
+      "F2-AC3",
+      "F2-AC5"
+    ],
+    "files": [
+      "src/pages/SubscriptionNew.tsx"
+    ],
+    "definition_of_done": [
+      "검증 에러 표시 확인",
+      "저장 후 대시보드 반영",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "SubscriptionInput { name; category; iconKey; amount; cycle; firstBillingDate; memo } → saveSubscription",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "Blueprint(screen-new): <ScreenScaffold data-testid=\"screen-new\"><Top title={<Top.TitleParagraph>구독 등록</Top.TitleParagraph>} /><Spacing size={16} /><Paragraph.Text typography=\"t4\">서비스 선택</Paragraph.Text><Spacing size={12} /><div style={{display:'flex',flexWrap:'wrap',gap:8}}><Chip label=\"넷플릭스\" variant={sel==='netflix'?'filled':'outlined'} selected={sel==='netflix'} /><Chip label=\"직접 입력\" variant={sel==='custom'?'filled':'outlined'} selected={sel==='custom'} /></div><Spacing size={24} /><TextField variant=\"box\" label=\"이름\" value={name} onChange={setName} hasError={!!err.name} help={err.name ?? '20자까지 입력할 수 있어요'} /><Spacing size={12} /><TextField variant=\"box\" label=\"금액(원)\" value={amount} onChange={setAmount} hasError={!!err.amount} inputMode=\"numeric\" /><Spacing size={12} /><TextField variant=\"box\" label=\"첫 결제일\" placeholder=\"YYYY-MM-DD\" /><Spacing size={12} /><Tab items={[{label:'매월'},{label:'매년'}]} /><Spacing size={12} /><TextField variant=\"box\" label=\"메모\" help=\"100자까지\" /><SubmitFooter><Button variant=\"fill\" size=\"large\" display=\"block\">저장하기</Button></SubmitFooter></ScreenScaffold>. Chip 선택 시 haptic tickWeak, 저장 시 haptic success. 여백은 Spacing만."
+  },
+  {
+    "id": "0012",
+    "title": "구독 상세 화면 /subscriptions/:id",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/SubscriptionDetail.tsx를 만든다. useParams로 id를 읽어 구독을 조회하고, 금액·주기·다음 결제일 D-day·메모·가격 이력 목록을 표시한다. 하단에 '수정'·'해지 체크리스트' 버튼, 삭제 AlertDialog를 둔다. 항목이 없으면 안내 + '대시보드로' 버튼을 렌더한다.",
+      "acceptance_criteria": [
+        "존재하지 않는 id로 진입하면 크래시 없이 '구독을 찾을 수 없어요' 안내와 대시보드 이동 버튼이 렌더된다",
+        "가격 이력이 있으면 변경일·금액·메모가 최신순 ListRow로 표시되고 이력이 없으면 '가격 변동 기록이 없어요'가 표시된다",
+        "'해지 체크리스트' 탭 시 /subscriptions/:id/checklist 로 state {subscriptionId, from:'detail'}와 함께 이동한다",
+        "삭제 버튼 탭 시 AlertDialog(왼쪽 버튼 '닫기')가 뜨고 확인하면 항목이 삭제된 뒤 '/'로 state {toast:'구독을 삭제했어요'}와 함께 이동한다",
+        "루트가 ScreenScaffold data-testid='screen-detail'이고 location.state는 RouteState 타입으로 캐스팅 + null 가드된다"
+      ]
+    },
+    "covers": [
+      "F5-AC3",
+      "F5-AC4",
+      "F7-AC2"
+    ],
+    "files": [
+      "src/pages/SubscriptionDetail.tsx"
+    ],
+    "definition_of_done": [
+      "없는 id 방어 확인",
+      "이력 정렬 최신순",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "screen-detail Blueprint: ScreenScaffold data-testid=\"screen-detail\" 루트 + Top(뒤로가기 + 구독 이름). 상단 SummaryHero label='이번 결제 예정' value={<Amount value={amount} unit=\"원\" typography=\"t2\" />} caption='다음 결제 D-2 · 2026-09-06'. Spacing size={24} 후 Paragraph.Text typography=\"t4\" '기본 정보' + ListRow.Texts type=\"2RowTypeA\" 로 주기/첫 결제일/카테고리/메모 표시. Spacing size={24} 후 '가격 이력' 섹션: ListRow.Texts top='17,000원' bottom='2026-08-01 · 인상' 최신순, 없으면 Paragraph.Text color=\"secondary\" '가격 변동 기록이 없어요'. SubmitFooter에 Button variant=\"weak\" display=\"block\" '수정' 과 Button variant=\"fill\" display=\"block\" '해지 체크리스트'. 삭제는 상단 Top 우측 텍스트 버튼 + AlertDialog(왼쪽 '닫기'). HEX 금지, 여백은 Spacing만, 모든 버튼 높이 44px 이상."
+  },
+  {
+    "id": "0013",
+    "title": "구독 수정 화면 /subscriptions/:id/edit",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/SubscriptionEdit.tsx를 만든다. 기존 값을 폼에 프리필하고 updateSubscription으로 저장한다. 금액이 바뀐 경우에만 가격 변경 메모 TextField를 노출하고, 저장 후 delta가 양수면 '인상' 안내 토스트 문구를 담아 상세로 돌아간다.",
+      "acceptance_criteria": [
+        "진입 시 이름·금액·주기·첫 결제일·메모가 기존 값으로 채워져 있다",
+        "금액 필드를 기존 값과 다르게 바꾸면 '가격 변경 메모' TextField가 나타나고 동일 값으로 되돌리면 사라진다",
+        "저장 시 금액이 올랐으면 상세로 이동하며 toast 문구에 인상 금액(예: '3,500원 올랐어요')이 포함되고, 금액이 그대로면 priceHistory 길이가 변하지 않는다",
+        "검증 실패 시 해당 TextField에 hasError가 표시되고 저장/이동이 일어나지 않는다"
+      ]
+    },
+    "covers": [
+      "F5-AC1",
+      "F5-AC2"
+    ],
+    "files": [
+      "src/pages/SubscriptionEdit.tsx"
+    ],
+    "definition_of_done": [
+      "프리필 확인",
+      "금액 변동 시에만 이력 추가",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "PriceChange { id; amount; changedAt; note } → Subscription.priceHistory",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "screen-edit Blueprint: ScreenScaffold data-testid=\"screen-edit\" + Top.TitleParagraph '구독 수정'. 폼 구성은 screen-new와 동일 — TextField variant=\"box\" 이름/금액(inputMode=\"numeric\")/첫 결제일(YYYY-MM-DD)/메모, Tab items={[{label:'매월'},{label:'매년'}]}, 각 필드 사이 Spacing size={12}. 금액 변경 감지 시에만 추가 렌더: Spacing size={12} + TextField variant=\"box\" label=\"가격 변경 메모\" help=\"100자까지 입력할 수 있어요\". 하단 SubmitFooter에 Button variant=\"fill\" size=\"large\" display=\"block\" '저장하기'(haptic success). 상태 변경(해지/재개)은 ListRow + Switch 1행으로 제공. HEX 금지, TDS padding 덮어쓰기 금지."
+  },
+  {
+    "id": "0014",
+    "title": "해지 체크리스트 화면 /subscriptions/:id/checklist",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/Checklist.tsx를 만든다. DEFAULT_CHECKLIST 5개 항목을 ListRow + Switch로 렌더하고 토글 시 즉시 저장한다. 상단에 진행률(N/5), 하단에 '해지 완료로 표시' 버튼을 둔다. 항목 라벨은 링크 없는 안내 텍스트만 사용한다.",
+      "acceptance_criteria": [
+        "체크리스트 5개 항목이 ListRow + Switch로 렌더되고 토글 시 haptic tickWeak 후 즉시 저장되어 새로고침해도 상태가 유지된다",
+        "상단 진행률 텍스트가 완료 개수에 따라 '2/5 완료'처럼 갱신된다",
+        "화면 텍스트에 '앱을 설치'/'다운로드'/'설치하기'/'스토어에서' 문자열이 0건이고 <a href>·window.open 호출이 0건이다",
+        "'해지 완료로 표시' 탭 시 구독 status가 CANCELED로 바뀌고 상세로 이동하며 대시보드 총액에서 제외된다",
+        "루트가 ScreenScaffold data-testid='screen-checklist'이고 location.state가 없어도 useParams의 id로 정상 동작한다"
+      ]
+    },
+    "covers": [
+      "F7-AC1",
+      "F7-AC2",
+      "F7-AC3",
+      "F7-AC4",
+      "G-2"
+    ],
+    "files": [
+      "src/pages/Checklist.tsx"
+    ],
+    "definition_of_done": [
+      "토글 영속화 확인",
+      "금지 문자열 0건",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "CancelChecklist { subscriptionId; items: ChecklistItem[]; updatedAt } → 'subtrack.checklists.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "screen-checklist Blueprint: ScreenScaffold data-testid=\"screen-checklist\" + Top.TitleParagraph '해지 체크리스트'. Spacing size={16} + Paragraph.Text typography=\"st11\" '2/5 완료' + Paragraph.Text typography=\"st12\" color=\"secondary\" '해지 전에 확인할 것들이에요'. Spacing size={16} 후 항목 5개: <ListRow contents={<ListRow.Texts type=\"2RowTypeA\" top={item.label} bottom={item.done ? '확인함' : '아직이에요'} />} right={<Switch checked={item.done} onChange={...} />} />. SubmitFooter에 Button variant=\"fill\" size=\"large\" display=\"block\" '해지 완료로 표시'(haptic success). 라벨은 안내 텍스트 전용 — 외부 링크/설치 유도 문구 금지. 여백은 Spacing만, HEX 금지, 터치 타깃 44px 이상."
+  },
+  {
+    "id": "0015",
+    "title": "또래 비교 화면 /compare (리워드 광고 게이팅)",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/Compare.tsx를 만든다. 연령대 Chip 선택 후 TossRewardAd로 결과를 게이팅하고, 해제되면 내 월 구독비 vs 참고용 벤치마크 비교(차이 금액·MiniBar)를 보여준다. 벤치마크에는 '참고용 추정치' 라벨을 반드시 붙인다. 24시간 내 해제 이력이 있으면 광고 없이 바로 결과를 표시한다.",
+      "acceptance_criteria": [
+        "ageBand가 UNSET이면 연령대 Chip 선택 UI만 보이고 결과 영역은 렌더되지 않는다",
+        "연령대 선택 후 광고 게이트가 보이며 TossRewardAd 시청 완료 시 결과가 노출되고 compareUnlockedAt이 저장된다",
+        "compareUnlockedAt이 24시간 이내면 진입 즉시 결과가 보이고, 25시간 경과 시 다시 광고 게이트가 표시된다",
+        "결과 화면에 BENCHMARK_DISCLAIMER('참고용 추정치입니다 · 실제 평균과 다를 수 있어요') 문구가 항상 함께 렌더된다",
+        "'AI가 생성한 결과입니다' 라벨이 렌더되지 않고(생성형 AI 미사용) 루트가 ScreenScaffold data-testid='screen-compare'이다"
+      ]
+    },
+    "covers": [
+      "F6-AC1",
+      "F6-AC2",
+      "F6-AC3",
+      "F6-AC4"
+    ],
+    "files": [
+      "src/pages/Compare.tsx"
+    ],
+    "definition_of_done": [
+      "게이트/해제 분기 확인",
+      "면책 문구 상시 노출",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007",
+      "0008"
+    ],
+    "db_schema": "AppSettings.ageBand / compareUnlockedAt → 'subtrack.settings.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "screen-compare Blueprint: ScreenScaffold data-testid=\"screen-compare\" + Top.TitleParagraph '또래 비교'. 연령대 선택: Paragraph.Text typography=\"t4\" '연령대를 선택해주세요' + <div style={{display:'flex',flexWrap:'wrap',gap:8}}> Chip 4종('20-24','25-29','30-34','35-39') selected 상태 반영, 탭 시 haptic tickWeak. 게이트: <TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>결과 영역</TossRewardAd> — 게이트 전 안내 Paragraph.Text '짧은 광고를 보면 비교 리포트를 볼 수 있어요' + Button variant=\"fill\" display=\"block\" '리포트 보기'. 결과: SummaryHero label='또래 대비' value={<Amount value={diff} unit=\"원\" typography=\"t1\" />} caption='또래 평균보다 12,000원 더 써요' + Spacing size={16} + MiniBar(내 지출 vs 평균) + Spacing size={8} + Paragraph.Text typography=\"st12\" color=\"secondary\" BENCHMARK_DISCLAIMER. 하단 FloatingTabBar. AI 배지/AI 고지 다이얼로그 사용 금지. HEX 금지."
+  },
+  {
+    "id": "0016",
+    "title": "더보기 화면 /more",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/More.tsx를 만든다. 연령대 설정 BottomSheet, 프리미엄 진입 ListRow, 데이터 초기화(AlertDialog 확인 후 clearAll), 앱 정보(버전·면책 문구)를 ListRow로 구성한다. 외부 링크와 설치 유도 문구는 넣지 않는다.",
+      "acceptance_criteria": [
+        "연령대 ListRow 탭 시 BottomSheet가 열리고 선택 시 settings.ageBand가 저장되어 우측 값이 갱신된다",
+        "'데이터 초기화' 탭 시 AlertDialog(왼쪽 버튼 '닫기')가 뜨고 확인하면 SubTrack 키 4개만 삭제되며 대시보드가 빈 상태로 바뀐다",
+        "프리미엄 ListRow 탭 시 /premium 으로 state {from:'more'}와 함께 이동한다",
+        "화면 텍스트와 소스에 window.open·location.href·<a href> 사용이 0건이고 '설치'/'다운로드' 문구가 0건이다",
+        "루트가 ScreenScaffold data-testid='screen-more'이고 FloatingTabBar가 노출된다"
+      ]
+    },
+    "covers": [
+      "F8-AC6",
+      "G-1",
+      "G-2"
+    ],
+    "files": [
+      "src/pages/More.tsx"
+    ],
+    "definition_of_done": [
+      "초기화 후 다른 키 보존 확인",
+      "외부 링크 0건",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "screen-more Blueprint: ScreenScaffold data-testid=\"screen-more\" + Top.TitleParagraph '더보기'. ListRow 그룹 — (1) contents={<ListRow.Texts type=\"1RowTypeA\" top=\"연령대\" />} right={<Paragraph.Text typography=\"st11\">25-29</Paragraph.Text>} onClick → BottomSheet(제목 '연령대를 선택해주세요', Chip 4종 또는 ListRow 선택형, 좌측 보조 버튼 '닫기'). (2) '프리미엄' ListRow → navigate('/premium',{state:{from:'more'}}). (3) '데이터 초기화' ListRow → AlertDialog(왼쪽 '닫기' / 오른쪽 '초기화'). (4) '앱 정보' ListRow(버전 표시) + Paragraph.Text typography=\"st12\" color=\"secondary\" 면책 문구. 섹션 사이 Spacing size={16}. AdSlot(비프리미엄일 때만) 하단 배치. FloatingTabBar 노출. HEX 금지, 링크 금지."
+  },
+  {
+    "id": "0017",
+    "title": "프리미엄 화면 /premium (IAP)",
+    "epic": "Epic 3: 화면",
+    "task": {
+      "description": "src/pages/Premium.tsx를 만든다. 혜택 목록(구독 무제한·광고 제거·비교 리포트 상시)과 TossPurchase 결제 버튼을 배치하고, processProductGrant에서 settings.isPremium=true와 premiumGrantedAt을 저장한다. 이미 프리미엄이면 결제 버튼 대신 이용 중 안내를 표시한다.",
+      "acceptance_criteria": [
+        "비프리미엄 상태에서 TossPurchase(sku={import.meta.env.VITE_TOSS_IAP_SKU}) 결제 버튼이 렌더되고 혜택 3개가 ListRow로 표시된다",
+        "결제 성공 콜백에서 settings.isPremium이 true, premiumGrantedAt이 ISO 문자열로 저장되고 새로고침 후에도 유지된다",
+        "isPremium이 true면 결제 버튼이 사라지고 '프리미엄 이용 중이에요' 안내가 렌더되며 화면 내 AdSlot이 렌더되지 않는다",
+        "location.state.from이 'limit'이면 상단에 '무료 플랜은 3개까지예요' 안내 문구가 추가로 표시되고, state가 null이어도 크래시 없이 렌더된다",
+        "루트가 ScreenScaffold data-testid='screen-premium'이다"
+      ]
+    },
+    "covers": [
+      "F8-AC1",
+      "F8-AC2",
+      "F8-AC7"
+    ],
+    "files": [
+      "src/pages/Premium.tsx"
+    ],
+    "definition_of_done": [
+      "결제 후 엔타이틀먼트 영속화",
+      "state null 가드",
+      "tsc --noEmit 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "AppSettings.isPremium / premiumGrantedAt → 'subtrack.settings.v1'",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "screen-premium Blueprint: ScreenScaffold data-testid=\"screen-premium\" + Top.TitleParagraph '프리미엄'. state.from==='limit'이면 상단 Paragraph.Text typography=\"st11\" '무료 플랜은 3개까지예요' + Spacing size={8}. SummaryHero label='SubTrack 프리미엄' caption='한 번 결제로 계속 사용해요'. Spacing size={24} 후 혜택 ListRow 3개 — left={<Asset.ContentIcon />} contents={<ListRow.Texts type=\"2RowTypeA\" top=\"구독 무제한 등록\" bottom=\"3개 제한 없이 관리해요\" />}, '광고 없이 사용', '비교 리포트 상시 열람'. Spacing size={24} 후 <TossPurchase sku={import.meta.env.VITE_TOSS_IAP_SKU} processProductGrant={...} onPurchased={...} /> 를 SubmitFooter 안에 display=\"block\"로 배치, 탭 시 haptic success. 프리미엄 상태면 결제 영역 대신 Paragraph.Text '프리미엄 이용 중이에요'. HEX 금지, AdSlot 렌더 금지."
+  },
+  {
+    "id": "0018",
+    "title": "라우팅 배선 + 탭바 + Provider",
+    "epic": "4",
+    "task": {
+      "description": "src/App.tsx에서 BrowserRouter로 8개 라우트(/, /subscriptions/new, /subscriptions/:id, /subscriptions/:id/edit, /subscriptions/:id/checklist, /compare, /more, /premium)를 연결하고 FloatingTabBar(홈·비교·더보기 3탭)를 탭 루트 화면에서만 노출한다. 전역 Provider 배선과 알 수 없는 경로 fallback도 이 패킷에서 처리한다. main.tsx는 수정하지 않는다.",
+      "acceptance_criteria": [
+        "8개 경로 모두 직접 URL 진입 시 해당 화면이 렌더되고 console.error가 0건이다",
+        "존재하지 않는 경로 진입 시 크래시 없이 '/'로 리다이렉트된다",
+        "FloatingTabBar는 /, /compare, /more 에서만 노출되고 상세·등록·수정·체크리스트·프리미엄 화면에서는 렌더되지 않으며 활성 탭에 컬러 틴트가 적용된다",
+        "하단 고정 요소에 paddingBottom: calc(Npx + env(safe-area-inset-bottom))이 적용되어 있고 탭 아이템 높이가 44px 이상이다",
+        "src/main.tsx 파일이 변경되지 않았다(@AI:ANCHOR 보존)"
+      ]
+    },
+    "covers": [
+      "F1-AC7",
+      "G-9"
+    ],
+    "files": [
+      "src/App.tsx",
+      "src/components/AppTabBar.tsx"
+    ],
+    "definition_of_done": [
+      "8라우트 전부 렌더",
+      "fallback 리다이렉트",
+      "main.tsx 무수정"
+    ],
+    "depends_on": [
+      "0009",
+      "0011",
+      "0012",
+      "0013",
+      "0014",
+      "0015",
+      "0016",
+      "0017"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [
+      "react-router-dom"
+    ],
+    "ui_requirements": "App.tsx: BrowserRouter + Routes. 탭바는 템플릿 제공 FloatingTabBar를 감싼 AppTabBar(홈/또래 비교/더보기 3탭, 활성 탭 컬러 틴트 var(--tds-color-blue500), 비활성 var(--tds-color-grey500)). 탭 전환 시 haptic tickWeak. 하단 고정 요소 paddingBottom: 'calc(12px + env(safe-area-inset-bottom))'. TDS TabBar는 존재하지 않으므로 사용 금지. HEX 금지."
+  },
+  {
+    "id": "0019",
+    "title": "광고 배치 · 무료 3개 제한 게이트",
+    "epic": "Epic 4: 통합",
+    "task": {
+      "description": "src/components/PremiumGate.tsx(무료·활성 3건 도달 시 BottomSheet 안내)와 src/hooks/useAdVisibility.ts(프리미엄이면 광고 미렌더, 광고 ID env 미주입 시 AdSlot 자체를 렌더하지 않음)를 만들고 대시보드·더보기의 배너 위치를 최종 조정한다. App.tsx와 main.tsx는 건드리지 않는다.",
+      "acceptance_criteria": [
+        "무료 사용자가 활성 구독 3건일 때 '구독 추가' 탭 시 BottomSheet('무료 플랜은 3개까지예요', 좌측 버튼 '닫기', 우측 '프리미엄 보기')가 열리고 등록 화면으로 이동하지 않는다",
+        "'프리미엄 보기' 탭 시 /premium 으로 state {from:'limit'}와 함께 이동한다",
+        "isPremium이 true면 대시보드·더보기의 AdSlot이 DOM에 렌더되지 않고 3건 제한 게이트도 동작하지 않는다",
+        "VITE_TOSS_AD_GROUP_ID가 빈 문자열이면 AdSlot이 렌더되지 않고 레이아웃 깨짐·console.error 0건이다",
+        "배너는 콘텐츠 사이/목록 하단에 배치되어 SubmitFooter 버튼을 가리지 않는다"
+      ]
+    },
+    "covers": [
+      "F8-AC3",
+      "F8-AC4",
+      "F8-AC5"
+    ],
+    "files": [
+      "src/components/PremiumGate.tsx",
+      "src/hooks/useAdVisibility.ts",
+      "src/pages/Home.tsx",
+      "src/pages/More.tsx"
+    ],
+    "definition_of_done": [
+      "제한 게이트 동작",
+      "프리미엄 광고 제거",
+      "env 미주입 방어"
+    ],
+    "depends_on": [
+      "0018"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "BottomSheet(제목 '무료 플랜은 3개까지예요', 본문 Paragraph.Text '프리미엄으로 바꾸면 제한 없이 등록할 수 있어요', 좌측 보조 버튼 '닫기', Button variant=\"fill\" display=\"block\" '프리미엄 보기'). AdSlot: <AdSlot data-testid=\"ad-banner-home\" adGroupId={import.meta.env.VITE_TOSS_AD_GROUP_ID} /> — 대시보드는 목록 아래·SubmitFooter 위에 Spacing size={24} 후 배치, 더보기는 최하단. 프리미엄이거나 ID 미주입이면 미렌더. HEX 금지, TDS padding 덮어쓰기 금지."
+  },
+  {
+    "id": "0020",
+    "title": "컴플라이언스 · 호환성 최종 감사",
+    "epic": "Epic 4: 통합",
+    "task": {
+      "description": "글로벌 준수 AC를 스크립트로 검증한다. src/scripts/audit.mjs를 만들어 HEX 리터럴, window.open/location.href, fetch/XHR/axios, 설치 유도 문구, 외부 분석 SDK, ES2020+ API(at/findLast/structuredClone/lookbehind) 사용을 정적 검사하고 vite.config.ts의 build.target을 ['es2019','safari14']로 맞춘다.",
+      "acceptance_criteria": [
+        "node src/scripts/audit.mjs 실행 시 HEX 리터럴·window.open·location.href·fetch·XMLHttpRequest·axios 매칭이 전부 0건으로 보고되고 exit code 0이다",
+        "'앱을 설치'/'다운로드'/'설치하기'/'스토어에서' 문자열과 google-analytics/gtag/amplitude/mixpanel/sentry/firebase 매칭이 0건이다",
+        "Array.prototype.at·findLast·structuredClone·정규식 lookbehind 매칭이 0건이고 vite.config.ts의 build.target이 ['es2019','safari14']이다",
+        "vite build 후 preview에서 등록→대시보드→상세→비교→프리미엄 전체 플로우 실행 시 console.error 호출이 0건이다"
+      ]
+    },
+    "covers": [
+      "G-1",
+      "G-3",
+      "G-4",
+      "G-5",
+      "G-6",
+      "G-7",
+      "G-8"
+    ],
+    "files": [
+      "src/scripts/audit.mjs",
+      "vite.config.ts",
+      "package.json"
+    ],
+    "definition_of_done": [
+      "audit 스크립트 exit 0",
+      "build.target 적용",
+      "프로덕션 빌드 성공"
+    ],
+    "depends_on": [
+      "0019"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  }
+]
