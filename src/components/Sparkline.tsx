@@ -1,49 +1,55 @@
+import { Paragraph } from "@toss/tds-mobile";
+
 /**
- * 스파크라인 — 숫자 배열을 경량 인라인 SVG 라인+에어리어로(상환 곡선, 추이 등).
+ * 스파크라인 — 최근 추이(월별 지출 등)를 경량 인라인 SVG 라인으로.
  *
- * Pre-built (재구현 금지): 데이터 시각화가 필요할 때. D3/Three.js 등 무거운 차트 라이브러리는
- * 번들 100MB 제한 + 정책상 금지 → 이 인라인 SVG로 대체한다(의존성 0). 색은 adaptive 토큰만.
+ * Pre-built (재구현 금지): D3 등 무거운 차트 라이브러리는 번들 제한상 금지 → 이 SVG로 대체(의존성 0).
+ * width는 항상 100%(반응형) — 고정 px width 금지.
  */
 export function Sparkline({
-  data,
-  width = 320,
+  points,
   height = 64,
   testId,
 }: {
-  data: number[];
-  width?: number;
+  points: number[];
   height?: number;
   testId?: string;
 }) {
-  if (!data || data.length < 2) return null;
+  if (!points || points.length === 0) {
+    return (
+      <Paragraph.Text typography="st12" color="var(--tds-color-grey500)">
+        데이터가 아직 없어요
+      </Paragraph.Text>
+    );
+  }
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  const viewWidth = 100;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
   const span = max - min || 1;
-  const stepX = width / (data.length - 1);
-  const points = data.map((v, i) => {
+  const stepX = points.length > 1 ? viewWidth / (points.length - 1) : 0;
+  const coords = points.map((v, i) => {
     const x = i * stepX;
     const y = height - ((v - min) / span) * height;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
-  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p}`).join(" ");
-  const area = `${line} L${width},${height} L0,${height} Z`;
 
   return (
     <svg
       data-testid={testId}
       width="100%"
       height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={`0 0 ${viewWidth} ${height}`}
       preserveAspectRatio="none"
       role="img"
-      aria-label="추이 그래프"
+      aria-label="최근 추이 그래프"
     >
-      <path d={area} fill="var(--adaptiveBlue500)" opacity={0.12} />
-      <path
-        d={line}
-        fill="none"
-        stroke="var(--adaptiveBlue500)"
+      <polyline
+        points={coords.join(" ")}
+        style={{
+          fill: "none",
+          stroke: "var(--tds-color-blue500)",
+        }}
         strokeWidth={2}
         strokeLinejoin="round"
         strokeLinecap="round"
