@@ -139,7 +139,7 @@ export function mockTds() {
         React.createElement(
           "nav",
           { role: "navigation" },
-          title && React.createElement("h1", null, title),
+          title,
           right,
           children,
         ),
