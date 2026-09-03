@@ -22,137 +22,137 @@ describe("packet-0001: 도메인 타입 + RouteState 정의", () => {
   // ============================================================
   // AC-1: TypeScript compilation + pure types (no runtime code)
   // ============================================================
-  it("AC-1[P0]: types.ts has 0 import statements and 0 runtime expressions", () => {
-    // Importing types should work — types.ts must be valid TS
+  it("AC-1[P0]: types.ts compiles as pure type declarations", () => {
+    // Importing type-only members must succeed with zero runtime cost.
     expect(true).toBe(true);
-    // This test passes if:
-    // 1. src/lib/types.ts exists
-    // 2. All types are properly defined
-    // 3. No import/export side effects or runtime code
   });
 
   // ============================================================
-  // AC-2: Subscription matches DB schema (15 fields, no optional)
+  // AC-2: Subscription matches SPEC data model 1:1 (no optional fields)
   // ============================================================
-  it("AC-2[P0]: Subscription has all 13 core fields from DB schema", () => {
-    // Define subscription with all required fields
+  it("AC-2[P0]: Subscription has all 13 fields from SPEC", () => {
     const subscription: Subscription = {
       id: "sub-123",
-      name: "Netflix",
-      category: "entertainment" as CategoryKey,
+      name: "넷플릭스",
+      category: "OTT",
       iconKey: "netflix",
-      amount: 16900,
-      cycle: "monthly" as BillingCycle,
-      firstBillingDate: "2024-01-01",
-      nextBillingDate: "2024-02-01",
-      memo: "Premium with ads",
-      status: "active" as SubscriptionStatus,
+      amount: 13500,
+      cycle: "MONTHLY",
+      firstBillingDate: "2026-09-10",
+      nextBillingDate: "2026-09-10",
+      memo: "",
+      status: "ACTIVE",
       priceHistory: [],
-      createdAt: "2024-01-01T00:00:00Z",
-      updatedAt: "2024-01-01T00:00:00Z",
+      createdAt: "2026-09-04T00:00:00Z",
+      updatedAt: "2026-09-04T00:00:00Z",
     };
 
-    // Verify all fields exist
     expect(subscription.id).toBe("sub-123");
-    expect(subscription.name).toBe("Netflix");
-    expect(subscription.category).toBe("entertainment");
+    expect(subscription.name).toBe("넷플릭스");
+    expect(subscription.category).toBe("OTT");
     expect(subscription.iconKey).toBe("netflix");
-    expect(subscription.amount).toBe(16900);
-    expect(subscription.cycle).toBe("monthly");
-    expect(subscription.firstBillingDate).toBe("2024-01-01");
-    expect(subscription.nextBillingDate).toBe("2024-02-01");
-    expect(subscription.memo).toBe("Premium with ads");
-    expect(subscription.status).toBe("active");
+    expect(subscription.amount).toBe(13500);
+    expect(subscription.cycle).toBe("MONTHLY");
+    expect(subscription.firstBillingDate).toBe("2026-09-10");
+    expect(subscription.nextBillingDate).toBe("2026-09-10");
+    expect(subscription.memo).toBe("");
+    expect(subscription.status).toBe("ACTIVE");
     expect(Array.isArray(subscription.priceHistory)).toBe(true);
-    expect(subscription.createdAt).toBe("2024-01-01T00:00:00Z");
-    expect(subscription.updatedAt).toBe("2024-01-01T00:00:00Z");
+    expect(subscription.createdAt).toBe("2026-09-04T00:00:00Z");
+    expect(subscription.updatedAt).toBe("2026-09-04T00:00:00Z");
   });
 
   it("AC-2[P0]: Subscription.priceHistory is PriceChange[] (price history tracking)", () => {
-    // priceHistory must be an array of PriceChange objects
     const priceHistory: PriceChange[] = [
-      {
-        amount: 15900,
-        changedAt: "2023-12-01T00:00:00Z",
-      },
-      {
-        amount: 16900,
-        changedAt: "2024-01-01T00:00:00Z",
-      },
+      { id: "pc-1", amount: 13500, changedAt: "2026-06-01", note: "" },
+      { id: "pc-2", amount: 17000, changedAt: "2026-09-04", note: "요금제 변경" },
     ];
 
     expect(Array.isArray(priceHistory)).toBe(true);
     expect(priceHistory.length).toBe(2);
-    expect(priceHistory[0].amount).toBe(15900);
-    expect(priceHistory[1].amount).toBe(16900);
-    expect(priceHistory[0].changedAt).toMatch(/2023-12-01/);
+    expect(priceHistory[0].amount).toBe(13500);
+    expect(priceHistory[1].amount).toBe(17000);
+    expect(priceHistory[1].changedAt).toMatch(/2026-09-04/);
   });
 
   it("AC-2[P0]: Subscription fields are required (not optional with ?)", () => {
-    // All fields must be required — no ? modifiers
-    // This would fail TypeScript if any field is optional
+    // If any required field were missing below, TypeScript would fail to compile.
     const sub: Subscription = {
       id: "",
       name: "",
-      category: "entertainment" as CategoryKey,
+      category: "ETC",
       iconKey: "",
       amount: 0,
-      cycle: "monthly" as BillingCycle,
+      cycle: "MONTHLY",
       firstBillingDate: "",
       nextBillingDate: "",
       memo: "",
-      status: "active" as SubscriptionStatus,
+      status: "ACTIVE",
       priceHistory: [],
       createdAt: "",
       updatedAt: "",
     };
 
-    // If any required field is missing, TypeScript will error
     expect(sub).toBeDefined();
   });
 
   // ============================================================
-  // AC-3: RouteState covers all 8 routes with nullable values
+  // AC-3: RouteState covers all 8 routes, each value type is nullable
   // ============================================================
-  it("AC-3[P0]: RouteState includes path '/' (home)", () => {
-    // Home route state — may be null or include selectedCategory
-    const homeState: RouteState = null;
+  it("AC-3[P0]: RouteState has exactly the 8 SPEC route keys", () => {
+    const keys: Array<keyof RouteState> = [
+      "/",
+      "/subscriptions/new",
+      "/subscriptions/:id",
+      "/subscriptions/:id/edit",
+      "/subscriptions/:id/checklist",
+      "/compare",
+      "/more",
+      "/premium",
+    ];
+    expect(keys.length).toBe(8);
+  });
+
+  it("AC-3[P0]: RouteState['/'] accepts null (direct URL access / refresh)", () => {
+    const homeState: RouteState["/"] = null;
     expect(homeState === null || typeof homeState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/subscriptions/new' (create)", () => {
-    const newSubState: RouteState = null; // or { }
+  it("AC-3[P0]: RouteState['/subscriptions/new'] accepts null", () => {
+    const newSubState: RouteState["/subscriptions/new"] = null;
     expect(newSubState === null || typeof newSubState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/subscriptions/:id' (detail view)", () => {
-    // Detail view needs id from params/state
-    const detailState: RouteState = null;
+  it("AC-3[P0]: RouteState['/subscriptions/:id'] accepts a subscriptionId payload or null", () => {
+    const detailState: RouteState["/subscriptions/:id"] = { subscriptionId: "sub_1" };
     expect(detailState === null || typeof detailState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/subscriptions/:id/edit' (edit form)", () => {
-    const editState: RouteState = null;
+  it("AC-3[P0]: RouteState['/subscriptions/:id/edit'] accepts null", () => {
+    const editState: RouteState["/subscriptions/:id/edit"] = null;
     expect(editState === null || typeof editState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/subscriptions/:id/checklist' (cancel flow)", () => {
-    const checklistState: RouteState = null;
+  it("AC-3[P0]: RouteState['/subscriptions/:id/checklist'] carries subscriptionId + from, or null", () => {
+    const checklistState: RouteState["/subscriptions/:id/checklist"] = {
+      subscriptionId: "sub_1",
+      from: "dday",
+    };
     expect(checklistState === null || typeof checklistState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/compare' (comparison view)", () => {
-    const compareState: RouteState = null;
+  it("AC-3[P0]: RouteState['/compare'] accepts null", () => {
+    const compareState: RouteState["/compare"] = null;
     expect(compareState === null || typeof compareState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/more' (additional options)", () => {
-    const moreState: RouteState = null;
+  it("AC-3[P0]: RouteState['/more'] accepts null", () => {
+    const moreState: RouteState["/more"] = null;
     expect(moreState === null || typeof moreState === "object").toBe(true);
   });
 
-  it("AC-3[P0]: RouteState includes path '/premium' (premium features)", () => {
-    const premiumState: RouteState = null;
+  it("AC-3[P0]: RouteState['/premium'] accepts null", () => {
+    const premiumState: RouteState["/premium"] = null;
     expect(premiumState === null || typeof premiumState === "object").toBe(true);
   });
 
@@ -162,27 +162,25 @@ describe("packet-0001: 도메인 타입 + RouteState 정의", () => {
   it("AC-4[P0]: ServiceTemplate has exactly 4 fields: key, name, category, iconKey", () => {
     const template: ServiceTemplate = {
       key: "netflix",
-      name: "Netflix",
-      category: "entertainment" as CategoryKey,
+      name: "넷플릭스",
+      category: "OTT",
       iconKey: "netflix",
     };
 
     expect(template.key).toBe("netflix");
-    expect(template.name).toBe("Netflix");
-    expect(template.category).toBe("entertainment");
+    expect(template.name).toBe("넷플릭스");
+    expect(template.category).toBe("OTT");
     expect(template.iconKey).toBe("netflix");
   });
 
   it("AC-4[P0]: ServiceTemplate does NOT include amount, price, or billing fields", () => {
     const template: ServiceTemplate = {
       key: "spotify",
-      name: "Spotify",
-      category: "music" as CategoryKey,
+      name: "스포티파이",
+      category: "MUSIC",
       iconKey: "spotify",
     };
 
-    // These properties should NOT exist in the type
-    // (using 'as any' to bypass TS strict mode for negative tests)
     const anyTemplate = template as any;
     expect(anyTemplate.amount).toBeUndefined();
     expect(anyTemplate.price).toBeUndefined();
@@ -193,86 +191,75 @@ describe("packet-0001: 도메인 타입 + RouteState 정의", () => {
   // ============================================================
   // Additional type system verifications (P1)
   // ============================================================
-  it("P1: BillingCycle is a union of valid cycle types", () => {
-    // Must support standard cycles
-    const cycles: BillingCycle[] = [
-      "monthly",
-      "quarterly",
-      "semiannual",
-      "annual",
-    ];
-
-    expect(cycles.length).toBe(4);
-    expect(cycles[0]).toBe("monthly");
+  it("P1: BillingCycle is 'MONTHLY' | 'YEARLY'", () => {
+    const cycles: BillingCycle[] = ["MONTHLY", "YEARLY"];
+    expect(cycles.length).toBe(2);
+    expect(cycles).toContain("MONTHLY");
+    expect(cycles).toContain("YEARLY");
   });
 
-  it("P1: SubscriptionStatus supports lifecycle states", () => {
-    // Track subscription state changes
-    const statuses: SubscriptionStatus[] = [
-      "active",
-      "paused",
-      "canceled",
-    ];
-
-    expect(statuses).toContain("active");
-    expect(statuses.length).toBeGreaterThanOrEqual(3);
+  it("P1: SubscriptionStatus is 'ACTIVE' | 'CANCELED'", () => {
+    const statuses: SubscriptionStatus[] = ["ACTIVE", "CANCELED"];
+    expect(statuses).toContain("ACTIVE");
+    expect(statuses).toContain("CANCELED");
+    expect(statuses.length).toBe(2);
   });
 
-  it("P1: CategoryKey represents service categories", () => {
-    // Categories for organizing subscriptions
+  it("P1: CategoryKey represents the 7 SPEC service categories", () => {
     const categories: CategoryKey[] = [
-      "entertainment",
-      "music",
-      "food",
-      "shopping",
-      "education",
-      "health",
-      "other",
+      "OTT",
+      "MUSIC",
+      "CLOUD",
+      "GAME",
+      "PRODUCTIVITY",
+      "FITNESS",
+      "ETC",
     ];
 
-    expect(categories).toContain("entertainment");
-    expect(categories.length).toBeGreaterThanOrEqual(5);
+    expect(categories).toContain("OTT");
+    expect(categories.length).toBe(7);
   });
 
-  it("P1: ChecklistItem represents cancel checklist row", () => {
+  it("P1: ChecklistItem represents a cancel checklist row", () => {
     const item: ChecklistItem = {
-      id: "item-1",
-      label: "비용 환급 받기",
-      checked: false,
+      id: "remaining",
+      label: "남은 이용 기간 확인",
+      done: false,
+      doneAt: null,
     };
 
-    expect(item.id).toBe("item-1");
-    expect(item.label).toBe("비용 환급 받기");
-    expect(item.checked).toBe(false);
+    expect(item.id).toBe("remaining");
+    expect(item.label).toBe("남은 이용 기간 확인");
+    expect(item.done).toBe(false);
+    expect(item.doneAt).toBeNull();
   });
 
   it("P1: CancelChecklist groups checklist items", () => {
     const checklist: CancelChecklist = {
       subscriptionId: "sub-123",
       items: [],
-      completedAt: null,
+      updatedAt: "2026-09-04T00:00:00Z",
     };
 
     expect(checklist.subscriptionId).toBe("sub-123");
     expect(Array.isArray(checklist.items)).toBe(true);
-    expect(checklist.completedAt === null).toBe(true);
+    expect(checklist.updatedAt).toBe("2026-09-04T00:00:00Z");
   });
 
   it("P1: Result<T> wraps success/error states", () => {
-    // Success case
     const successResult: Result<Subscription> = {
       ok: true,
       data: {
         id: "sub-1",
-        name: "Netflix",
-        category: "entertainment" as CategoryKey,
+        name: "넷플릭스",
+        category: "OTT",
         iconKey: "netflix",
-        amount: 16900,
-        cycle: "monthly" as BillingCycle,
-        firstBillingDate: "2024-01-01",
-        nextBillingDate: "2024-02-01",
+        amount: 13500,
+        cycle: "MONTHLY",
+        firstBillingDate: "2026-09-10",
+        nextBillingDate: "2026-09-10",
         memo: "",
-        status: "active" as SubscriptionStatus,
+        status: "ACTIVE",
         priceHistory: [],
         createdAt: "",
         updatedAt: "",
@@ -282,109 +269,87 @@ describe("packet-0001: 도메인 타입 + RouteState 정의", () => {
     expect(successResult.ok).toBe(true);
     expect(successResult.data).toBeDefined();
 
-    // Error case
     const errorResult: Result<Subscription> = {
       ok: false,
-      error: "Not found",
+      error: { code: "STORAGE_FULL", fields: null },
     };
 
     expect(errorResult.ok).toBe(false);
-    expect(errorResult.error).toBe("Not found");
+    expect(errorResult.error.code).toBe("STORAGE_FULL");
   });
 
   it("P1: LoadState<T> tracks async loading states", () => {
-    // Idle
-    const idle: LoadState<Subscription[]> = {
-      status: "idle",
-      data: null,
-    };
-
+    const idle: LoadState<Subscription[]> = { status: "idle", data: null };
     expect(idle.status).toBe("idle");
     expect(idle.data).toBeNull();
 
-    // Loading
-    const loading: LoadState<Subscription[]> = {
-      status: "loading",
-      data: null,
-    };
-
+    const loading: LoadState<Subscription[]> = { status: "loading", data: null };
     expect(loading.status).toBe("loading");
 
-    // Success
-    const success: LoadState<Subscription[]> = {
-      status: "success",
-      data: [],
-    };
+    const ready: LoadState<Subscription[]> = { status: "ready", data: [] };
+    expect(ready.status).toBe("ready");
+    expect(Array.isArray(ready.data)).toBe(true);
 
-    expect(success.status).toBe("success");
-    expect(Array.isArray(success.data)).toBe(true);
-
-    // Error
     const error: LoadState<Subscription[]> = {
       status: "error",
       data: null,
-      error: "Failed to load",
+      error: "STORAGE_FULL",
     };
-
     expect(error.status).toBe("error");
-    expect(error.error).toBe("Failed to load");
+    expect(error.error).toBe("STORAGE_FULL");
   });
 
   it("P1: AgeBand categorizes user age groups", () => {
-    // Age groups for analytics/personalization
-    const bands: AgeBand[] = [
-      "20s",
-      "30s",
-      "40s",
-      "50s",
-      "60+",
-    ];
-
-    expect(bands.length).toBeGreaterThanOrEqual(5);
+    const bands: AgeBand[] = ["20-24", "25-29", "30-34", "35-39", "UNSET"];
+    expect(bands.length).toBe(5);
+    expect(bands).toContain("UNSET");
   });
 
-  it("P1: AppSettings stores user preferences", () => {
+  it("P1: AppSettings stores user entitlement/settings", () => {
     const settings: AppSettings = {
-      theme: "light",
-      currency: "KRW",
-      locale: "ko",
+      ageBand: "UNSET",
+      isPremium: false,
+      premiumGrantedAt: null,
+      compareUnlockedAt: null,
+      onboardedAt: null,
     };
 
-    expect(settings.theme).toBe("light");
-    expect(settings.currency).toBe("KRW");
-    expect(settings.locale).toBe("ko");
+    expect(settings.ageBand).toBe("UNSET");
+    expect(settings.isPremium).toBe(false);
+    expect(settings.premiumGrantedAt).toBeNull();
+    expect(settings.compareUnlockedAt).toBeNull();
+    expect(settings.onboardedAt).toBeNull();
   });
 
-  it("P1: StorageMeta tracks app state metadata", () => {
+  it("P1: StorageMeta tracks schema version", () => {
     const meta: StorageMeta = {
-      lastSyncAt: "2024-01-01T00:00:00Z",
-      version: "1.0.0",
+      schemaVersion: 1,
+      migratedAt: "2026-09-04T00:00:00Z",
     };
 
-    expect(meta.lastSyncAt).toMatch(/2024-01-01/);
-    expect(meta.version).toBe("1.0.0");
+    expect(meta.schemaVersion).toBe(1);
+    expect(meta.migratedAt).toMatch(/2026-09-04/);
   });
 
-  it("P1: BenchmarkTable provides service pricing reference", () => {
+  it("P1: BenchmarkTable maps each non-UNSET AgeBand to a reference amount", () => {
     const benchmark: BenchmarkTable = {
-      key: "netflix",
-      name: "Netflix",
-      avgPrice: 16900,
-      category: "entertainment" as CategoryKey,
+      "20-24": 15000,
+      "25-29": 22000,
+      "30-34": 28000,
+      "35-39": 31000,
     };
 
-    expect(benchmark.key).toBe("netflix");
-    expect(benchmark.avgPrice).toBe(16900);
-    expect(benchmark.category).toBe("entertainment");
+    expect(benchmark["20-24"]).toBe(15000);
+    expect(benchmark["35-39"]).toBe(31000);
   });
 
   it("P1: StorageError describes persistence failures", () => {
     const error: StorageError = {
-      code: "QUOTA_EXCEEDED",
-      message: "Storage quota exceeded",
+      code: "VALIDATION",
+      fields: ["name", "amount", "firstBillingDate"],
     };
 
-    expect(error.code).toBe("QUOTA_EXCEEDED");
-    expect(error.message).toContain("quota");
+    expect(error.code).toBe("VALIDATION");
+    expect(error.fields).toContain("amount");
   });
 });
