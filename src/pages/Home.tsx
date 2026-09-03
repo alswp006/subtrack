@@ -1,6 +1,7 @@
-import { Top, Paragraph, Spacing, Button, Asset } from '@toss/tds-mobile';
+import { useEffect, useState } from 'react';
+import { Top, Paragraph, Spacing, Button, Asset, Toast } from '@toss/tds-mobile';
 import { generateHapticFeedback } from '@apps-in-toss/web-framework';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { SummaryHero } from '../components/SummaryHero';
 import { Amount } from '../components/Amount';
@@ -9,9 +10,11 @@ import { MiniBar } from '../components/MiniBar';
 import { ListSkeleton } from '../components/ListSkeleton';
 import { EmptyState, LoadingState } from '../components/StateView';
 import { FloatingTabBar, type TabItem } from '../components/FloatingTabBar';
+import { DdayCard } from '../components/DdayCard';
+import { SubscriptionList } from '../components/SubscriptionList';
 import { useSubscriptions } from '../hooks/useSubscriptions';
 import { monthlyAmount } from '../domain/calc';
-import type { CategoryKey, Subscription } from '../lib/types';
+import type { CategoryKey, RouteState, Subscription } from '../lib/types';
 
 const TABS: TabItem[] = [
   { label: '홈', path: '/' },
@@ -67,12 +70,25 @@ function computeMonthlyTrend(items: Subscription[]): number[] {
 }
 
 /**
- * 대시보드 — 탭 루트 홈. 요약 히어로 + 최근 6개월 추이 + 카테고리 비중.
- * 목록/D-day 카드는 다음 패킷에서 이 화면에 이어 붙인다.
+ * 대시보드 — 탭 루트 홈. 요약 히어로 + D-day 카드 + 최근 6개월 추이 + 카테고리 비중 + 목록.
  */
 export default function Home() {
   const navigate = useNavigate();
-  const { status, items, totalMonthly, activeCount, canceledCount } = useSubscriptions();
+  const location = useLocation();
+  const { status, items, totalMonthly, activeCount, canceledCount, upcoming } = useSubscriptions();
+
+  const initialToast = ((location.state as RouteState['/'] | null) ?? null)?.toastMessage ?? null;
+  const [toastMessage, setToastMessage] = useState<string | null>(initialToast);
+
+  useEffect(() => {
+    if (!initialToast) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+      navigate('/', { replace: true, state: null });
+    }, 2000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialToast]);
 
   function handleAdd() {
     try {
@@ -85,32 +101,39 @@ export default function Home() {
 
   const top = <Top title={<Top.TitleParagraph>구독 관리</Top.TitleParagraph>} />;
   const bottom = <FloatingTabBar items={TABS} />;
+  const toast = <Toast open={toastMessage !== null} text={toastMessage ?? ''} position="bottom" />;
 
   if (status === 'loading') {
     return (
-      <ScreenScaffold testId="screen-home" top={top} bottom={bottom}>
-        <LoadingState testId="hero-skeleton" rows={1} />
-        <Spacing size={24} />
-        <ListSkeleton count={3} />
-      </ScreenScaffold>
+      <>
+        {toast}
+        <ScreenScaffold testId="screen-home" top={top} bottom={bottom}>
+          <LoadingState testId="hero-skeleton" rows={1} />
+          <Spacing size={24} />
+          <ListSkeleton count={3} />
+        </ScreenScaffold>
+      </>
     );
   }
 
   if (items.length === 0) {
     return (
-      <ScreenScaffold testId="screen-home" top={top} bottom={bottom}>
-        <EmptyState
-          testId="empty-state"
-          icon={<Asset.ContentIcon name="iconStarRegular" alt="구독 없음" style={{ width: 48, height: 48 }} />}
-          title="아직 등록한 구독이 없어요"
-          description="첫 구독을 등록하고 월 지출을 확인해보세요"
-          action={
-            <Button variant="fill" display="block" onClick={handleAdd}>
-              첫 구독 등록하기
-            </Button>
-          }
-        />
-      </ScreenScaffold>
+      <>
+        {toast}
+        <ScreenScaffold testId="screen-home" top={top} bottom={bottom}>
+          <EmptyState
+            testId="empty-state"
+            icon={<Asset.ContentIcon name="iconStarRegular" alt="구독 없음" style={{ width: 48, height: 48 }} />}
+            title="아직 등록한 구독이 없어요"
+            description="첫 구독을 등록하고 월 지출을 확인해보세요"
+            action={
+              <Button variant="fill" display="block" onClick={handleAdd}>
+                첫 구독 등록하기
+              </Button>
+            }
+          />
+        </ScreenScaffold>
+      </>
     );
   }
 
@@ -118,32 +141,45 @@ export default function Home() {
   const categoryBreakdown = computeCategoryBreakdown(items);
 
   return (
-    <ScreenScaffold testId="screen-home" top={top} bottom={bottom}>
-      <SummaryHero
-        testId="summary-hero"
-        label="이번 달 구독비"
-        value={<Amount value={totalMonthly} unit="원" typography="t1" />}
-        caption={`활성 ${activeCount}개 · 해지함 ${canceledCount}개`}
-        action={
-          <Button variant="fill" display="block" onClick={handleAdd}>
-            구독 추가
-          </Button>
-        }
-      />
+    <>
+      {toast}
+      <ScreenScaffold testId="screen-home" top={top} bottom={bottom}>
+        <SummaryHero
+          testId="summary-hero"
+          label="이번 달 구독비"
+          value={<Amount value={totalMonthly} unit="원" typography="t1" />}
+          caption={`활성 ${activeCount}개 · 해지함 ${canceledCount}개`}
+          action={
+            <Button variant="fill" display="block" onClick={handleAdd}>
+              구독 추가
+            </Button>
+          }
+        />
 
-      <Spacing size={24} />
+        <Spacing size={24} />
 
-      <Paragraph.Text typography="t4">최근 6개월 추이</Paragraph.Text>
-      <Spacing size={12} />
-      <Sparkline testId="trend-sparkline" points={trend} />
+        <DdayCard items={upcoming} />
 
-      <Spacing size={24} />
+        <Spacing size={24} />
 
-      <Paragraph.Text typography="t4">카테고리 비중</Paragraph.Text>
-      <Spacing size={12} />
-      <MiniBar testId="category-minibar" items={categoryBreakdown} />
+        <Paragraph.Text typography="t4">최근 6개월 추이</Paragraph.Text>
+        <Spacing size={12} />
+        <Sparkline testId="trend-sparkline" points={trend} />
 
-      <Spacing size={24} />
-    </ScreenScaffold>
+        <Spacing size={24} />
+
+        <Paragraph.Text typography="t4">카테고리 비중</Paragraph.Text>
+        <Spacing size={12} />
+        <MiniBar testId="category-minibar" items={categoryBreakdown} />
+
+        <Spacing size={24} />
+
+        <Paragraph.Text typography="t4">결제 임박순</Paragraph.Text>
+        <Spacing size={12} />
+        <SubscriptionList items={upcoming} />
+
+        <Spacing size={24} />
+      </ScreenScaffold>
+    </>
   );
 }
