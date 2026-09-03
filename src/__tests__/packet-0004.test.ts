@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { readJson, writeJson, clearAll, newId, ensureMeta } from "@/domain/storage";
+import { readJson, writeJson, clearAll, newId, ensureMeta, safeGetItem, safeSetItem } from "@/domain/storage";
 
 describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
   beforeEach(() => {
@@ -90,20 +90,18 @@ describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
       const existingValue = { id: "123", name: "test" };
       localStorage.setItem(key, JSON.stringify(existingValue));
 
-      const originalSetItem = localStorage.setItem;
       const setItemSpy = vi
-        .fn()
-        .mockImplementation((k: string, v: string) => {
+        .spyOn(Storage.prototype, "setItem")
+        .mockImplementation(() => {
           throw new DOMException("QuotaExceededError", "QuotaExceededError");
         });
-      localStorage.setItem = setItemSpy;
 
       const result = writeJson(key, { id: "456", name: "new" });
 
       expect(result.ok).toBe(false);
       expect(result.error).toBe("STORAGE_FULL");
 
-      localStorage.setItem = originalSetItem;
+      setItemSpy.mockRestore();
     });
 
     it("should preserve existing value when quota is exceeded", () => {
@@ -113,6 +111,7 @@ describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
 
       const originalSetItem = Storage.prototype.setItem;
       vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+        this: Storage,
         k: string,
         v: string
       ) {
@@ -153,6 +152,7 @@ describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
 
       const originalSetItem = Storage.prototype.setItem;
       vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+        this: Storage,
         k: string,
         v: string
       ) {
@@ -338,7 +338,7 @@ describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
       const writeResult = writeJson(key, originalData);
       expect(writeResult.ok).toBe(true);
 
-      const readResult = readJson(key, []);
+      const readResult = readJson(key, [] as typeof originalData);
       expect(readResult).toEqual(originalData);
       expect(readResult[0].amount).toBe(50000);
       expect(readResult[1].active).toBe(false);
@@ -371,7 +371,7 @@ describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
       };
 
       writeJson(key, complexData);
-      const result = readJson(key, {});
+      const result = readJson(key, {} as typeof complexData);
 
       expect(result.metadata.version).toBe(1);
       expect(result.subscriptions[0].items[0].price).toBe(10000);
@@ -388,6 +388,44 @@ describe("스토리지 프리미티브 (안전 읽기/쓰기)", () => {
 
       writeJson(key, value2);
       expect(readJson(key, {})).toEqual(value2);
+    });
+  });
+
+  // ============ safeGetItem / safeSetItem (contract.ts) ============
+  describe("safeGetItem / safeSetItem", () => {
+    it("safeSetItem writes and safeGetItem reads it back", () => {
+      const key = "subtrack.safe.v1";
+      const value = { id: "sub-1", amountKrw: 9900 };
+
+      expect(safeSetItem(key, value)).toBe(true);
+      expect(safeGetItem<typeof value>(key)).toEqual(value);
+    });
+
+    it("safeGetItem returns null for a missing key", () => {
+      expect(safeGetItem("subtrack.missing.v1")).toBeNull();
+    });
+
+    it("safeGetItem returns null and quarantines corrupted JSON", () => {
+      const key = "subtrack.safe.corrupt.v1";
+      localStorage.setItem(key, "{{broken");
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      expect(safeGetItem(key)).toBeNull();
+      expect(localStorage.getItem(`${key}.corrupt`)).toBe("{{broken");
+
+      vi.restoreAllMocks();
+    });
+
+    it("safeSetItem returns false when quota is exceeded", () => {
+      const setItemSpy = vi
+        .spyOn(Storage.prototype, "setItem")
+        .mockImplementation(() => {
+          throw new DOMException("QuotaExceededError", "QuotaExceededError");
+        });
+
+      expect(safeSetItem("subtrack.safe.full.v1", { a: 1 })).toBe(false);
+
+      setItemSpy.mockRestore();
     });
   });
 
