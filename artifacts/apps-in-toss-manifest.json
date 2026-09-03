@@ -1,0 +1,25 @@
+{
+  "koreanName": "구독관리",
+  "englishName": "SubTrack",
+  "appName": "sub-track",
+  "ageRating": "만 19세 이상",
+  "supportEmail": "support@aifactory.dev",
+  "category": {
+    "primary": "금융",
+    "secondary": "가계부"
+  },
+  "subtitle": "매달 구독비를 한눈에 관리",
+  "description": "OTT, 음악, 클라우드 등 여러 구독 서비스를 등록하면 앱이 한곳에 모아줍니다. 월 총 구독비를 실시간으로 보고, 갱신일이 다가오면 알림을 받습니다. 자동결제로 인한 중복 결제나 불필요한 구독을 놓치지 않도록 갱신일 D-day 리마인더가 도와줍니다.",
+  "searchKeywords": [
+    "구독관리",
+    "구독료",
+    "OTT",
+    "음악스트리밍",
+    "자동결제",
+    "가계부",
+    "월지출관리",
+    "구독알림",
+    "구독취소",
+    "클라우드저장소"
+  ]
+}
