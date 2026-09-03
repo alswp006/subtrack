@@ -10,7 +10,6 @@ import type { RouteState, Subscription } from '@/lib/types';
  */
 export function DdayCard({ items }: { items: Subscription[] }) {
   const navigate = useNavigate();
-  console.log('navigate fn', navigate.toString().slice(0,80));
 
   if (items.length === 0) return null;
 
@@ -19,17 +18,14 @@ export function DdayCard({ items }: { items: Subscription[] }) {
   const validDays = !Number.isNaN(days);
 
   function handleCancelPrep() {
-    console.log('HANDLER CALLED');
     try {
       Promise.resolve(generateHapticFeedback({ type: 'tickWeak' })).catch(() => {});
     } catch {
       /* WebView 밖(브라우저/검수자 PC/jsdom)에서는 throw — 무시 */
     }
-    console.log('calling navigate now');
     navigate(`/subscriptions/${nearest.id}/checklist`, {
       state: { subscriptionId: nearest.id, from: 'dday' } as RouteState['/subscriptions/:id/checklist'],
     });
-    console.log('called navigate');
   }
 
   if (validDays && days <= 3) {
