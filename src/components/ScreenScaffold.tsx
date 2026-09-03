@@ -18,13 +18,15 @@ export function ScreenScaffold({
   top,
   children,
   bottom,
+  testId,
 }: {
   top?: ReactNode;
   children: ReactNode;
   bottom?: ReactNode;
+  testId?: string;
 }) {
   return (
-    <PageShell style={top ? { paddingTop: 0 } : undefined}>
+    <PageShell style={top ? { paddingTop: 0 } : undefined} testId={testId}>
       {top}
       <div style={{ padding: "16px 16px 0" }}>{children}</div>
       {bottom}

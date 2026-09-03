@@ -7,9 +7,18 @@ import type { CSSProperties, ReactNode } from "react";
  * Pre-built (재구현 금지): 새 페이지는 이 컴포넌트로 감싸라.
  * 헤더/하단 CTA까지 한 번에 두려면 ScreenScaffold를 쓰라.
  */
-export function PageShell({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+export function PageShell({
+  children,
+  style,
+  testId,
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+  testId?: string;
+}) {
   return (
     <div
+      data-testid={testId}
       style={{
         minHeight: "100dvh",
         paddingTop: "calc(var(--toss-safe-area-top) + 16px)",
