@@ -190,6 +190,7 @@ export interface RouteState {
     BottomCTA.tsx
     Card.tsx
     CountUp.tsx
+    DdayCard.tsx
     FloatingTabBar.tsx
     ListSkeleton.tsx
     MiniBar.tsx
@@ -197,6 +198,7 @@ export interface RouteState {
     ScreenScaffold.tsx
     Sparkline.tsx
     StateView.tsx
+    SubscriptionList.tsx
     SummaryHero.tsx
     TossPurchase.tsx
     TossRewardAd.tsx
@@ -218,6 +220,7 @@ export interface RouteState {
   main.tsx
   pages/
     CancelChecklist.tsx
+    Checklist.tsx
     Home.tsx
     SubscriptionDetail.tsx
     SubscriptionEdit.tsx
@@ -242,6 +245,7 @@ export interface RouteState {
 - BottomCTA.tsx: SubmitFooter, ButtonStack
 - Card.tsx: Card
 - CountUp.tsx: CountUp
+- DdayCard.tsx: DdayCard
 - FloatingTabBar.tsx: FloatingTabBar
 - ListSkeleton.tsx: ListSkeleton
 - MiniBar.tsx: MiniBar
@@ -249,6 +253,7 @@ export interface RouteState {
 - ScreenScaffold.tsx: ScreenScaffold
 - Sparkline.tsx: Sparkline
 - StateView.tsx: EmptyState, LoadingState
+- SubscriptionList.tsx: SubscriptionList
 - SummaryHero.tsx: SummaryHero
 - TossPurchase.tsx: TossPurchase
 - TossRewardAd.tsx: TossRewardAd

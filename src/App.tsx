@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import SubscriptionNew from './pages/SubscriptionNew';
 import SubscriptionDetail from './pages/SubscriptionDetail';
 import SubscriptionEdit from './pages/SubscriptionEdit';
-import CancelChecklist from './pages/CancelChecklist';
+import Checklist from './pages/Checklist';
 
 // Dev-only TDS Gallery route — `import.meta.env.DEV` is statically replaced
 // (true in dev, false in prod) so the entire import + Route is tree-shaken
@@ -20,7 +20,7 @@ export default function App() {
       <Route path="/subscriptions/new" element={<SubscriptionNew />} />
       <Route path="/subscriptions/:id" element={<SubscriptionDetail />} />
       <Route path="/subscriptions/:id/edit" element={<SubscriptionEdit />} />
-      <Route path="/subscriptions/:id/checklist" element={<CancelChecklist />} />
+      <Route path="/subscriptions/:id/checklist" element={<Checklist />} />
       {DevTdsGallery && (
         <Route
           path="/__tds-gallery"

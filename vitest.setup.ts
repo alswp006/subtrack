@@ -15,6 +15,18 @@ import Module from "node:module";
 import { register } from "node:module";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
+import { mockAppsInToss } from "@/__tests__/__helpers__/mocks";
+
+// vi.mock() only auto-hoists above imports when it's called *literally* in the file that
+// also imports the mocked module. Test files that mock via the mockAll()/mockAppsInToss()
+// helper (a plain function call, not hoisted) get an unmocked SDK binding whenever that
+// helper call appears *after* their own `import ... from "@apps-in-toss/web-framework"`
+// line (adversarial review 2026-09-04 — packet-0014's `generateHapticFeedback` import
+// preceded its `mockAll()` call, so the test's own assertion target was the real SDK
+// function, never a spy). Registering the mock here — in a setup file that Vitest always
+// finishes running before a test file's own module graph starts loading — makes the mock
+// win regardless of per-file import order.
+mockAppsInToss();
 
 // ── `@/` alias for dynamic require()/import() ──
 // vite/vitest resolve the `@/` alias for static `import`, but some tests call
