@@ -13,13 +13,33 @@ import { test, expect, type Page } from "@playwright/test";
 const ROUTES: { path: string; name: string }[] = [
   { path: "/", name: "home" },
   { path: "/subscriptions/new", name: "subscription-new" },
+  { path: "/subscriptions/seed-1/edit", name: "subscription-edit" },
   // { path: "/settings", name: "settings" },
 ];
 
 /** 데이터가 필요한 화면용 localStorage 시드(앱에 맞게 채워라). 앱 스크립트보다 먼저 실행된다. */
 async function seed(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    // window.localStorage.setItem("MY_STORAGE_KEY", JSON.stringify({ /* ... */ }));
+    window.localStorage.setItem(
+      "subtrack.subscriptions.v1",
+      JSON.stringify([
+        {
+          id: "seed-1",
+          name: "넷플릭스",
+          category: "OTT",
+          iconKey: "netflix",
+          amount: 9900,
+          cycle: "MONTHLY",
+          firstBillingDate: "2026-08-04",
+          nextBillingDate: "2099-01-04",
+          memo: "가족과 함께 공유 중",
+          status: "ACTIVE",
+          priceHistory: [],
+          createdAt: "2026-08-04T00:00:00Z",
+          updatedAt: "2026-08-04T00:00:00Z",
+        },
+      ]),
+    );
   });
 }
 

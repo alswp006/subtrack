@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import Home from './pages/Home';
 import SubscriptionNew from './pages/SubscriptionNew';
 import SubscriptionDetail from './pages/SubscriptionDetail';
+import SubscriptionEdit from './pages/SubscriptionEdit';
 import CancelChecklist from './pages/CancelChecklist';
 
 // Dev-only TDS Gallery route — `import.meta.env.DEV` is statically replaced
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/subscriptions/new" element={<SubscriptionNew />} />
       <Route path="/subscriptions/:id" element={<SubscriptionDetail />} />
+      <Route path="/subscriptions/:id/edit" element={<SubscriptionEdit />} />
       <Route path="/subscriptions/:id/checklist" element={<CancelChecklist />} />
       {DevTdsGallery && (
         <Route
