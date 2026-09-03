@@ -71,6 +71,7 @@ export function TossRewardAd({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotId]);
 
+  console.log('DEBUG TossRewardAd render', { slotId, unlocked, adLoaded, isShowing });
   if (unlocked) {
     return <>{children}</>;
   }

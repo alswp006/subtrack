@@ -159,10 +159,13 @@ export function mockTds() {
       { Header: ({ children }: any) => React.createElement("div", null, children) },
     ),
 
-    Chip: ({ children, selected, onClick }: any) =>
+    // 실제 Chip은 variant('fill'|'weak')로 선택 상태를 표현한다(그룹 wrapper인 ChipItem의
+    // `selected` prop과 달리 Chip 자체엔 selected가 없음 — .d.ts 검증). selected가 명시되면
+    // 우선하고, 없으면 variant==='fill'을 선택 상태로 간주해 aria-pressed를 항상 채운다.
+    Chip: ({ children, selected, variant, onClick }: any) =>
       React.createElement(
         "button",
-        { role: "button", "aria-pressed": selected, onClick },
+        { role: "button", "aria-pressed": selected ?? variant === "fill", onClick },
         children,
       ),
 
