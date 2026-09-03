@@ -201,6 +201,8 @@ export interface RouteState {
     TossRewardAd.tsx
   domain/
     calc.ts
+    checklists.ts
+    settings.ts
     storage.ts
     subscriptions.ts
   hooks/
@@ -253,6 +255,7 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0003: 날짜 · 금액 계산 순수 함수 (files: src/domain/calc.ts, src/domain/calc.test.ts)
 - 0004: 스토리지 프리미티브 (안전 읽기/쓰기) (files: src/domain/storage.ts, src/domain/storage.test.ts)
 - 0005: 구독 리포지토리 (CRUD · 검증 · 가격 이력) (files: src/domain/subscriptions.ts, src/domain/subscriptions.test.ts)
+- 0006: 설정 · 체크리스트 리포지토리 (files: src/domain/settings.ts, src/domain/checklists.ts, src/domain/settings.test.ts)
 
 ## Available exports from existing files
 // src/App.tsx
@@ -316,10 +319,9 @@ export function formatCurrencyKrw(amount: number): string {
 export function formatDate(date: string, format: 'short' | 'long' = 'short'): string {
 export function getDaysUntilBilling(nextBillingDate: string): number {
 
-// src/domain/storage.ts
-export type WriteResult = { ok: boolean; error?: 'STORAGE_FULL' };
-export function readJson<T>(key: string, fallback: T): T {
-export fun
+// src/domain/checklists.ts
+export function getChecklist(subscriptionId: string): CancelChecklist {
+export function toggleChecklistItem(subscriptionId: string, i
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 

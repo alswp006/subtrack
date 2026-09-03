@@ -78,7 +78,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
   describe("useSubscriptions: AC-1 Loading State (P0)", () => {
     it("AC-1[P0]: should return status='loading' on first render", () => {
       // Hook not yet implemented — this test will fail on import
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       expect(result.current.status).toBe("loading");
@@ -87,7 +87,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
     });
 
     it("AC-1[P0]: should transition to status='ready' after effect runs", async () => {
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       expect(result.current.status).toBe("loading");
@@ -150,7 +150,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -182,7 +182,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -246,7 +246,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -327,7 +327,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -378,7 +378,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -417,7 +417,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result: result1 } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -456,7 +456,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -524,7 +524,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -584,7 +584,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       ];
       mockStorage.set("subtrack.subscriptions.v1", JSON.stringify(mockSubs));
 
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
       const { result } = renderHookWithRouter(useSubscriptions);
 
       await waitFor(() => {
@@ -602,7 +602,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
   describe("useSettings: Basic State Management", () => {
     it("should return default settings when none exist in storage", () => {
       // Empty storage — should return defaults
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       expect(result.current.settings.ageBand).toBe("UNSET");
@@ -621,7 +621,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       };
       mockStorage.set("subtrack.settings.v1", JSON.stringify(mockSettings));
 
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       expect(result.current.settings.ageBand).toBe("25-29");
@@ -639,7 +639,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       };
       mockStorage.set("subtrack.settings.v1", JSON.stringify(mockSettings));
 
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       expect(result.current.isPremium).toBe(true);
@@ -648,7 +648,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
 
   describe("useSettings: Update Function", () => {
     it("should update settings and persist to storage", async () => {
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       await act(async () => {
@@ -661,7 +661,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
     });
 
     it("should merge partial updates without overwriting other fields", async () => {
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       const oldPremium = result.current.settings.isPremium;
@@ -675,7 +675,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
     });
 
     it("should update isPremium field", async () => {
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       await act(async () => {
@@ -687,7 +687,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
     });
 
     it("should handle multiple updates in sequence", async () => {
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       await act(async () => {
@@ -718,7 +718,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       };
       mockStorage.set("subtrack.settings.v1", JSON.stringify(mockSettings));
 
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       expect(result.current.isPremium).toBe(true);
@@ -735,7 +735,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       };
       mockStorage.set("subtrack.settings.v1", JSON.stringify(mockSettings));
 
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
       const { result } = renderHookWithRouter(useSettings);
 
       expect(result.current.isPremium).toBe(false);
@@ -748,8 +748,8 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
 
   describe("Integration: Both hooks coexist", () => {
     it("should allow using both hooks without conflicts", async () => {
-      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions;
-      const useSettings = require("@/hooks/useSettings").useSettings;
+      const useSubscriptions = require("@/hooks/useSubscriptions").useSubscriptions as () => UseSubscriptionsReturn;
+      const useSettings = require("@/hooks/useSettings").useSettings as () => UseSettingsReturn;
 
       const { result } = renderHook(
         () => ({
@@ -770,7 +770,7 @@ describe("상태 훅 useSubscriptions / useSettings [packet-0007]", () => {
       // Verify both hooks return expected types
       expect(result.current.subs.items).toBeDefined();
       expect(typeof result.current.subs.totalMonthly).toBe("number");
-      expect(result.current.settings.ageBand).toBeDefined();
+      expect(result.current.settings.settings.ageBand).toBeDefined();
       expect(typeof result.current.settings.isPremium).toBe("boolean");
     });
   });
