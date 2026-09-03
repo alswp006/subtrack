@@ -16,6 +16,7 @@ const ROUTES: { path: string; name: string }[] = [
   { path: "/subscriptions/seed-1/edit", name: "subscription-edit" },
   { path: "/subscriptions/seed-1/checklist", name: "subscription-checklist" },
   { path: "/premium", name: "premium" },
+  { path: "/compare", name: "compare" },
   // { path: "/settings", name: "settings" },
 ];
 

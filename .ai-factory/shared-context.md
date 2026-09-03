@@ -280,11 +280,25 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0013: 구독 수정 화면 /subscriptions/:id/edit (files: src/pages/SubscriptionEdit.tsx)
 - 0016: 더보기 화면 /more (files: src/pages/More.tsx)
 - 0017: 프리미엄 화면 /premium (IAP) (files: src/pages/Premium.tsx)
-
-## TDD 상태
-⚠️ TDD 테스트 파일 자동 작성에 실패했습니다. 소스 코드를 작성하기 전에 `src/__tests__/packet-XXXX.test.ts` 파일에 AC 기반 테스트를 먼저 작성하세요 (TDD red phase). 테스트 작성 후 구현하세요.
+- 0001: 도메인 타입 + RouteState 정의 (files: src/lib/types.ts)
+- 0002: 정적 상수 · 스토리지 키 정의 (files: src/lib/constants.ts)
+- 0003: 날짜 · 금액 계산 순수 함수 (files: src/domain/calc.ts, src/domain/calc.test.ts)
+- 0004: 스토리지 프리미티브 (안전 읽기/쓰기) (files: src/domain/storage.ts, src/domain/storage.test.ts)
+- 0005: 구독 리포지토리 (CRUD · 검증 · 가격 이력) (files: src/domain/subscriptions.ts, src/domain/subscriptions.test.ts)
+- 0006: 설정 · 체크리스트 리포지토리 (files: src/domain/settings.ts, src/domain/checklists.ts, src/domain/settings.test.ts)
+- 0007: 상태 훅 useSubscriptions / useSettings (files: src/hooks/useSubscriptions.ts, src/hooks/useSettings.ts)
+- 0008: 시각화 · 스켈레톤 공용 컴포넌트 (files: src/components/Sparkline.tsx, src/components/MiniBar.tsx, src/components/ListSkeleton.tsx)
+- 0009: 대시보드 — 요약 히어로 · 차트 · 빈/로딩 상태 (files: src/pages/Home.tsx)
+- 0011: 구독 등록 화면 /subscriptions/new (files: src/pages/SubscriptionNew.tsx)
+- 0012: 구독 상세 화면 /subscriptions/:id (files: src/pages/SubscriptionDetail.tsx)
+- 0013: 구독 수정 화면 /subscriptions/:id/edit (files: src/pages/SubscriptionEdit.tsx)
+- 0016: 더보기 화면 /more (files: src/pages/More.tsx)
+- 0017: 프리미엄 화면 /premium (IAP) (files: src/pages/Premium.tsx)
 
 ## Available exports from existing files
+// src/App.tsx
+export default function App() {
+
 // src/components/AdSlot.tsx
 export function AdSlot({ adGroupId, className, variant, theme }: AdSlotProps) {
 
@@ -350,9 +364,7 @@ export function formatKRW(amount: number): string {
 export function ddayLabel(days: number): string {
 export function formatCurrencyKrw(amount: number): string {
 export function formatDate(date: string, format: 'short' | 'long' = 'short'): string {
-export function getDaysUntilBilling(nextBillingDate: string): number {
-
-// src/domain/che
+export function getDaysUntilBilling(nextB
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 

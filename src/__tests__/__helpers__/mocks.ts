@@ -298,17 +298,16 @@ export function mockAppsInToss() {
 }
 
 // ── Toss Reward Ad Component ──
-// TossRewardAd is a project-local component that wraps content behind ad viewing.
-// In tests, render the children directly (ad always "watched").
+// NOTE (2026-09-04): vi.mock() is hoisted by static AST scan of the file it appears
+// in — it used to run unconditionally the moment anything from this module was
+// imported (e.g. just `mockTds`), *regardless* of whether mockTossRewardAd() was
+// ever called. That silently mocked @/components/TossRewardAd for every test file,
+// including packet-0015 (/compare), which intentionally exercises the REAL
+// TossRewardAd against the mocked SDK to verify ad-gating end-to-end. No screen
+// besides /compare renders TossRewardAd, so this is now a no-op — kept only so
+// existing mockTossRewardAd()/mockAll() call sites keep compiling.
 export function mockTossRewardAd() {
-  vi.mock("@/components/TossRewardAd", () => ({
-    TossRewardAd: ({ children, onReward }: any) => {
-      // Auto-trigger onReward in tests to unlock content
-      if (onReward) setTimeout(onReward, 0);
-      return children;
-    },
-    default: ({ children }: any) => children,
-  }));
+  // intentionally empty — see note above
 }
 
 // ── react-router-dom ──

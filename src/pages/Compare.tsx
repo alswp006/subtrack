@@ -52,7 +52,6 @@ export default function Compare() {
 
   const ageBand = settings.ageBand;
   const unlocked = isWithinUnlockWindow(settings.compareUnlockedAt);
-  console.log('DEBUG render', { ageBand, compareUnlockedAt: settings.compareUnlockedAt, unlocked });
 
   function handleSelectAgeBand(value: Exclude<AgeBand, 'UNSET'>) {
     fireTickHaptic();
